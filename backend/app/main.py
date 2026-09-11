@@ -1,0 +1,15 @@
+from fastapi import Depends, FastAPI
+from sqlalchemy import text
+from sqlalchemy.orm import Session
+from app.database import get_db, engine
+
+app = FastAPI()
+
+@app.get("/")
+def root():
+    return {"message": "помидорка"}
+
+@app.get("/test-db")
+def test_db(db: Session = Depends(get_db)):
+    result = db.execute(text("SELECT 1"))
+    return {"database": result.scalar()}
