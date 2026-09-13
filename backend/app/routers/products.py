@@ -3,10 +3,13 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.product import Product
 from app.schemas.product import ProductCreate, ProductResponse
+from app.models.product_image import ProductImage
+from app.schemas.product import ProductImageCreate, ProductImageResponse
+
 
 router = APIRouter(
     prefix="/api/products",
-    tags=["Продукты"]
+    tags=["Товары"]
 )
 
 @router.post(
@@ -130,7 +133,149 @@ def delete_product(
     db.commit()
     return { "message" : "Товар успешно удалён"}
 
+@router.post(
+    "/{product_id}/images",
+    response_model=ProductImageResponse
+)
+def add_product_image_to_product(
+    product_id: int,
+    image: ProductImageCreate,
+    db:Session = Depends(get_db)
+):
+    product = db.query(Product).filter(
+        Product.id == product_id
+    ).first()
 
+    if not product:
+        raise HTTPException(
+            status_code=404,
+            detail= "Товар не найден"
+        )
 
+    if image.is_main:
+        main_image = db.query(ProductImage).filter(
+            ProductImage.product_id == product_id,
+            ProductImage.is_main == True
+        ).first()
 
+        if main_image:
+            raise HTTPException(
+                status_code=400,
+                detail="У товара уже есть главная фотография"
+            )
     
+    new_image = ProductImage(
+        product_id=product.id,
+        image_url=image.image_url,
+        alt_text=image.alt_text,
+        sort_order=image.sort_order,
+        is_main=image.is_main,
+    )
+
+    db.add(new_image)
+    db.commit()
+    db.refresh(new_image)
+    return new_image
+
+@router.get(
+    "/{product_id}/images",
+    response_model=list[ProductImageResponse]
+)
+def get_product_images(
+    product_id: int,
+    db: Session = Depends(get_db)
+):
+    product = db.query(Product).filter(
+        Product.id == product_id
+    ).first()
+
+    if not product:
+        raise HTTPException(
+            status_code=404,
+            detail="Товар не найден"
+        )
+
+    images = product.images
+    return images
+
+
+@router.get(
+    "/images/{image_id}",
+    response_model=ProductImageResponse
+)
+def get_product_image(
+    image_id: int,
+    db: Session = Depends(get_db)
+):
+    image = db.query(ProductImage).filter(
+        ProductImage.id == image_id
+    ).first()
+
+    if not image:
+        raise HTTPException(
+            status_code=404,
+            detail="Фотография не найдена"
+        )
+
+    return image
+
+@router.put(
+    "/images/{image_id}",
+    response_model=ProductImageResponse
+)
+def update_info_product_image(
+    image_id: int,
+    image_data: ProductImageCreate,
+    db: Session = Depends(get_db)
+):
+    image = db.query(ProductImage).filter(
+        ProductImage.id == image_id
+    ).first()
+
+    if not image:
+        raise HTTPException(
+            status_code=404,
+            detail="Фотография не найдена"
+        )
+
+    if image_data.is_main:
+        main_image = db.query(ProductImage).filter(
+            ProductImage.product_id == image.product_id,
+            ProductImage.is_main == True,
+            ProductImage.id != image_id
+        ).first()
+
+        if main_image:
+            raise HTTPException(
+                status_code=400,
+                detail="У товара уже есть главаная фотография"
+            )
+
+    image.alt_text = image_data.alt_text
+    image.sort_order = image_data.sort_order
+    image.is_main = image_data.is_main
+
+    db.commit()
+    db.refresh(image)
+    return image
+
+@router.delete(
+    "/images/{image_id}",
+)
+def delete_image(
+    image_id: int,
+    db: Session = Depends(get_db)
+):
+    image = db.query(ProductImage).filter(
+        ProductImage.id == image_id
+    ).first()
+
+    if not image:
+        raise HTTPException(
+            status_code=404,
+            detail="Фотография не найдена"
+        )
+
+    db.delete(image)
+    db.commit()
+    return { "message" : "Фотография успешно удалена"}

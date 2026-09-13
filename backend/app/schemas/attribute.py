@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 
 class AttributeValueCreate(BaseModel):
-    attribute_id: int
     value: str
     sort_order: int = 0
 
