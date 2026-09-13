@@ -4,9 +4,12 @@ from sqlalchemy.orm import Session
 from app.database import get_db, engine
 from app.models import *
 from app.routers.furniture_requests import router as furniture_requests_router
+from app.routers.categories import router as categories_router
+
 
 app = FastAPI()
 app.include_router(furniture_requests_router)
+app.include_router(categories_router)
 
 @app.get("/")
 def root():
