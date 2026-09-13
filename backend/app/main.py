@@ -2,8 +2,11 @@ from fastapi import Depends, FastAPI
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from app.database import get_db, engine
+from app.models import *
+from app.routers.furniture_requests import router as furniture_requests_router
 
 app = FastAPI()
+app.include_router(furniture_requests_router)
 
 @app.get("/")
 def root():
