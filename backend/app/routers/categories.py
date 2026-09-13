@@ -116,4 +116,4 @@ def delete_category(
 
     db.delete(category)
     db.commit()
-    return { "message": "Категория успешно удалена", "category": category }
+    return { "message": "Категория успешно удалена"}
