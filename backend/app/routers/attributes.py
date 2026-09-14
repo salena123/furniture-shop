@@ -4,12 +4,14 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.attribute import Attribute
 from app.models.attribute_value import AttributeValue
+from app.models.user import User
 from app.schemas.attribute import (
     AttributeCreate,
     AttributeResponse,
     AttributeValueCreate,
     AttributeValueResponse
 )
+from app.security import require_admin
 
 router = APIRouter(
     prefix="/api/attributes",
@@ -23,7 +25,8 @@ router = APIRouter(
 )
 def create_attribute(
     attribute: AttributeCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
     new_attribute = Attribute(
         name=attribute.name,
@@ -79,7 +82,8 @@ def get_attribute(
 def update_attribute(
     attribute_id: int,
     attribute_data: AttributeCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
     attribute = db.query(Attribute).filter(
         Attribute.id == attribute_id
@@ -105,7 +109,8 @@ def update_attribute(
 )
 def delete_attribute(
     attribute_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
     attribute = db.query(Attribute).filter(
         Attribute.id == attribute_id
@@ -132,7 +137,8 @@ def delete_attribute(
 def create_attribute_value(
     attribute_id: int,
     value: AttributeValueCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
     attribute = db.query(Attribute).filter(
         Attribute.id == attribute_id
@@ -213,7 +219,8 @@ def get_attribute_value(
 def update_attribute_value(
     value_id: int,
     value_data: AttributeValueCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
     value = db.query(AttributeValue).filter(
         AttributeValue.id == value_id
@@ -239,7 +246,8 @@ def update_attribute_value(
 )
 def delete_attribute_value(
     value_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
     value = db.query(AttributeValue).filter(
         AttributeValue.id == value_id

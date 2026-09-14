@@ -2,9 +2,11 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.product import Product
+from app.models.user import User
 from app.schemas.product import ProductCreate, ProductResponse
 from app.models.product_image import ProductImage
 from app.schemas.product import ProductImageCreate, ProductImageResponse
+from app.security import require_admin
 
 
 router = APIRouter(
@@ -18,7 +20,8 @@ router = APIRouter(
 )
 def create_product(
         product: ProductCreate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        _current_user: User = Depends(require_admin)
 ):
     new_product = Product(
         product_name=product.product_name,
@@ -81,7 +84,8 @@ def get_product(
 def update_product(
     product_id: int,
     product_data: ProductCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
     product = db.query(Product).filter(
         Product.id == product_id
@@ -114,11 +118,11 @@ def update_product(
 
 @router.delete(
     "/{product_id}",
-    response_model=ProductResponse,
 )
 def delete_product(
     product_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
     product = db.query(Product).filter(
         Product.id == product_id
@@ -140,7 +144,8 @@ def delete_product(
 def add_product_image_to_product(
     product_id: int,
     image: ProductImageCreate,
-    db:Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
     product = db.query(Product).filter(
         Product.id == product_id
@@ -226,7 +231,8 @@ def get_product_image(
 def update_info_product_image(
     image_id: int,
     image_data: ProductImageCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
     image = db.query(ProductImage).filter(
         ProductImage.id == image_id
@@ -251,6 +257,7 @@ def update_info_product_image(
                 detail="У товара уже есть главаная фотография"
             )
 
+    image.image_url = image_data.image_url
     image.alt_text = image_data.alt_text
     image.sort_order = image_data.sort_order
     image.is_main = image_data.is_main
@@ -264,7 +271,8 @@ def update_info_product_image(
 )
 def delete_image(
     image_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
     image = db.query(ProductImage).filter(
         ProductImage.id == image_id

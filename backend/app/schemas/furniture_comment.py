@@ -4,6 +4,9 @@ from datetime import datetime
 class FurnitureCommentCreate(BaseModel):
     comment_text: str
 
+class FurnitureCommentUpdate(BaseModel):
+    comment_text: str
+
 class FurnitureCommentResponse(BaseModel):
     id: int
     request_id: int

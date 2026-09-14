@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.category import Category
+from app.models.user import User
 from app.schemas.category import CategoryCreate, CategoryResponse
+from app.security import require_admin
 
 router = APIRouter(
     prefix="/api/categories",
@@ -15,7 +17,8 @@ router = APIRouter(
 )
 def create_category(
         category: CategoryCreate,
-        db: Session = Depends(get_db)
+        db: Session = Depends(get_db),
+        _current_user: User = Depends(require_admin)
 ):
     new_category = Category(
         name=category.name,
@@ -72,7 +75,8 @@ def get_category(
 def update_category(
     category_id: int,
     category_data: CategoryCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
     category = db.query(Category).filter(
         Category.id == category_id
@@ -99,11 +103,11 @@ def update_category(
 
 @router.delete(
     "/{category_id}",
-    response_model=CategoryResponse,
 )
 def delete_category(
     category_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
     category = db.query(Category).filter(
         Category.id == category_id
