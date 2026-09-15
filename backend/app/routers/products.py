@@ -10,6 +10,7 @@ from starlette.datastructures import UploadFile as StarletteUploadFile
 from app.database import get_db
 from app.models.attribute_value import AttributeValue
 from app.models.category import Category
+from app.models.material import Material
 from app.models.product import Product
 from app.models.product_attribute import ProductAttribute
 from app.models.product_image import ProductImage
@@ -56,6 +57,7 @@ NON_NULL_PRODUCT_FIELDS = {
 
 def _product_query(db: Session):
     return db.query(Product).options(
+        selectinload(Product.material_ref),
         selectinload(Product.images),
         selectinload(Product.product_attributes)
         .selectinload(ProductAttribute.attribute_value)
@@ -100,6 +102,20 @@ def _get_category_or_404(category_id: int, db: Session) -> Category:
         )
 
     return category
+
+
+def _get_material_or_404(material_id: int, db: Session) -> Material:
+    material = db.query(Material).filter(
+        Material.id == material_id
+    ).first()
+
+    if not material:
+        raise HTTPException(
+            status_code=404,
+            detail="Материал не найден"
+        )
+
+    return material
 
 
 def _ensure_product_slug_is_free(
@@ -184,6 +200,8 @@ def create_product(
     _current_user: User = Depends(require_admin)
 ):
     _get_category_or_404(product.category_id, db)
+    if product.material_id is not None:
+        _get_material_or_404(product.material_id, db)
     _ensure_product_slug_is_free(product.slug, db)
 
     new_product = Product(
@@ -193,6 +211,7 @@ def create_product(
         short_description=product.short_description,
         article=product.article,
         category_id=product.category_id,
+        material_id=product.material_id,
         price=product.price,
         material=product.material,
         is_custom=product.is_custom,
@@ -217,6 +236,7 @@ def create_product(
 )
 def get_products(
     category_id: int | None = None,
+    material_id: int | None = None,
     search: str | None = None,
     include_inactive: bool = False,
     limit: int = Query(20, ge=1, le=100),
@@ -242,6 +262,11 @@ def get_products(
             Product.category_id == category_id
         )
 
+    if material_id is not None:
+        query = query.filter(
+            Product.material_id == material_id
+        )
+
     if search:
         search_filter = f"%{search}%"
         query = query.filter(
@@ -251,6 +276,7 @@ def get_products(
                 Product.short_description.ilike(search_filter),
                 Product.article.ilike(search_filter),
                 Product.material.ilike(search_filter),
+                Product.material_ref.has(Material.name.ilike(search_filter)),
                 Product.color.ilike(search_filter),
             )
         )
@@ -338,6 +364,8 @@ def update_product(
 ):
     product = _get_product_or_404(product_id, db)
     _get_category_or_404(product_data.category_id, db)
+    if product_data.material_id is not None:
+        _get_material_or_404(product_data.material_id, db)
     _ensure_product_slug_is_free(
         product_data.slug,
         db,
@@ -350,6 +378,7 @@ def update_product(
     product.short_description = product_data.short_description
     product.article = product_data.article
     product.category_id = product_data.category_id
+    product.material_id = product_data.material_id
     product.price = product_data.price
     product.material = product_data.material
     product.is_custom = product_data.is_custom
@@ -388,6 +417,9 @@ def patch_product(
 
     if "category_id" in update_data:
         _get_category_or_404(update_data["category_id"], db)
+
+    if "material_id" in update_data and update_data["material_id"] is not None:
+        _get_material_or_404(update_data["material_id"], db)
 
     if "slug" in update_data:
         _ensure_product_slug_is_free(

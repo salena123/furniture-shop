@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models.attribute_value import AttributeValue
 from app.models.furniture_comment import FurnitureComment
 from app.models.furniture_request import FurnitureRequest
+from app.models.material import Material
 from app.models.product import Product
 from app.models.product_attribute import ProductAttribute
 from app.models.request_event import RequestEvent
@@ -38,11 +39,14 @@ router = APIRouter(
 
 def _request_query(db: Session):
     return db.query(FurnitureRequest).options(
+        selectinload(FurnitureRequest.material),
         selectinload(FurnitureRequest.assigned_manager),
         selectinload(FurnitureRequest.comments)
         .selectinload(FurnitureComment.user),
         selectinload(FurnitureRequest.events)
         .selectinload(RequestEvent.user),
+        selectinload(FurnitureRequest.product)
+        .selectinload(Product.material_ref),
         selectinload(FurnitureRequest.product)
         .selectinload(Product.images),
         selectinload(FurnitureRequest.product)
@@ -78,6 +82,20 @@ def _get_product_or_404(product_id: int, db: Session) -> Product:
         )
 
     return product
+
+
+def _get_material_or_404(material_id: int, db: Session) -> Material:
+    material = db.query(Material).filter(
+        Material.id == material_id
+    ).first()
+
+    if not material:
+        raise HTTPException(
+            status_code=404,
+            detail="Материал не найден"
+        )
+
+    return material
 
 
 def _get_assignable_manager_or_404(
@@ -207,11 +225,19 @@ def create_request(
     request: FurnitureRequestCreate,
     db: Session = Depends(get_db)
 ):
+    product = None
     if request.product_id is not None:
-        _get_product_or_404(request.product_id, db)
+        product = _get_product_or_404(request.product_id, db)
+
+    material_id = request.material_id
+    if material_id is not None:
+        _get_material_or_404(material_id, db)
+    elif product and product.material_id is not None:
+        material_id = product.material_id
 
     new_request = FurnitureRequest(
         product_id=request.product_id,
+        material_id=material_id,
         product_name=request.product_name,
         color_name=request.color_name,
         needs_measurements=request.needs_measurements,
@@ -237,6 +263,7 @@ def get_requests(
     assigned_manager_id: int | None = None,
     unassigned_only: bool = False,
     product_id: int | None = None,
+    material_id: int | None = None,
     phone: str | None = None,
     search: str | None = None,
     limit: int = Query(20, ge=1, le=100),
@@ -265,6 +292,11 @@ def get_requests(
             FurnitureRequest.product_id == product_id
         )
 
+    if material_id is not None:
+        query = query.filter(
+            FurnitureRequest.material_id == material_id
+        )
+
     if phone:
         query = query.filter(
             FurnitureRequest.phone.ilike(f"%{phone}%")
@@ -275,6 +307,7 @@ def get_requests(
         query = query.filter(
             or_(
                 FurnitureRequest.product_name.ilike(search_filter),
+                FurnitureRequest.material.has(Material.name.ilike(search_filter)),
                 FurnitureRequest.client_name.ilike(search_filter),
                 FurnitureRequest.phone.ilike(search_filter),
                 FurnitureRequest.comment.ilike(search_filter),
@@ -373,6 +406,9 @@ def patch_request(
 
     if "product_id" in update_data and update_data["product_id"] is not None:
         _get_product_or_404(update_data["product_id"], db)
+
+    if "material_id" in update_data and update_data["material_id"] is not None:
+        _get_material_or_404(update_data["material_id"], db)
 
     if "status" in update_data:
         new_status = update_data.pop("status")

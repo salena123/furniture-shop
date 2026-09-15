@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.furniture_request import FurnitureRequest
+from app.models.material import Material
 from app.models.product import Product
 from app.models.user import User
 from app.schemas.dashboard import DashboardStatsResponse
@@ -32,6 +33,17 @@ def _count_requests(db: Session, *filters) -> int:
 def _count_products(db: Session, *filters) -> int:
     query = db.query(
         func.count(Product.id)
+    )
+
+    if filters:
+        query = query.filter(*filters)
+
+    return query.scalar() or 0
+
+
+def _count_materials(db: Session, *filters) -> int:
+    query = db.query(
+        func.count(Material.id)
     )
 
     if filters:
@@ -96,4 +108,5 @@ def get_dashboard_stats(
         ),
         "total_products": _count_products(db),
         "active_products": _count_products(db, Product.is_active == True),
+        "total_materials": _count_materials(db),
     }

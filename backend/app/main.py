@@ -17,6 +17,7 @@ from app.routers.furniture_comments import router as furniture_comments_router
 from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
 from app.routers.dashboard import router as dashboard_router
+from app.routers.materials import router as materials_router
 
 app = FastAPI()
 
@@ -47,6 +48,7 @@ app.include_router(users_router)
 app.include_router(dashboard_router)
 app.include_router(furniture_requests_router)
 app.include_router(categories_router)
+app.include_router(materials_router)
 app.include_router(products_router)
 app.include_router(attributes_router)
 app.include_router(product_attributes_router)

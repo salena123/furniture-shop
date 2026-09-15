@@ -15,3 +15,4 @@ class DashboardStatsResponse(BaseModel):
     assigned_to_me: int
     total_products: int
     active_products: int
+    total_materials: int

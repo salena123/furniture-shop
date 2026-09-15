@@ -19,6 +19,7 @@ RequestStatus = Literal[
 
 class FurnitureRequestCreate(BaseModel):
     product_id: int | None = None
+    material_id: int | None = None
     product_name: str
     color_name: str | None = None
     needs_measurements: bool
@@ -30,6 +31,8 @@ class FurnitureRequestCreate(BaseModel):
 class FurnitureRequestResponse(BaseModel):
     id: int
     product_id: int | None
+    material_id: int | None = None
+    material_name: str | None = None
     product_name: str
     color_name: str | None
     needs_measurements: bool
@@ -56,6 +59,7 @@ class FurnitureRequestManagerUpdate(BaseModel):
 
 class FurnitureRequestUpdate(BaseModel):
     product_id: int | None = None
+    material_id: int | None = None
     product_name: str | None = None
     color_name: str | None = None
     needs_measurements: bool | None = None

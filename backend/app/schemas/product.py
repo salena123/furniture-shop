@@ -7,6 +7,7 @@ class ProductCreate(BaseModel):
     short_description: str | None = None
     article: str | None = None
     category_id: int
+    material_id: int | None = None
     price: str
     material: str | None = None
     is_custom: bool
@@ -24,6 +25,7 @@ class ProductUpdate(BaseModel):
     short_description: str | None = None
     article: str | None = None
     category_id: int | None = None
+    material_id: int | None = None
     price: str | None = None
     material: str | None = None
     is_custom: bool | None = None
@@ -42,6 +44,8 @@ class ProductResponse(BaseModel):
     short_description: str | None
     article: str | None
     category_id: int
+    material_id: int | None = None
+    material_name: str | None = None
     price: str
     material: str | None
     is_custom: bool

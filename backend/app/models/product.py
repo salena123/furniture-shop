@@ -32,6 +32,10 @@ class Product(Base):
         ForeignKey("categories.id"),
         nullable=False,
     )
+    material_id: Mapped[int | None] = mapped_column(
+        ForeignKey("materials.id", ondelete="SET NULL"),
+        nullable=True,
+    )
     price: Mapped[str] = mapped_column(
         String(100),
         nullable=False,
@@ -82,6 +86,10 @@ class Product(Base):
     )
     category: Mapped["Category"] = relationship(
         "Category",
+        back_populates="products"
+    )
+    material_ref: Mapped["Material | None"] = relationship(
+        "Material",
         back_populates="products"
     )
     images: Mapped[list["ProductImage"]] = relationship(

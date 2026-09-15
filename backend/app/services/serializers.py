@@ -52,6 +52,8 @@ def serialize_product(product):
         ),
     )
 
+    material_ref = product.material_ref
+
     return {
         "id": product.id,
         "product_name": product.product_name,
@@ -60,6 +62,8 @@ def serialize_product(product):
         "short_description": product.short_description,
         "article": product.article,
         "category_id": product.category_id,
+        "material_id": product.material_id,
+        "material_name": material_ref.name if material_ref else product.material,
         "price": product.price,
         "material": product.material,
         "is_custom": product.is_custom,
@@ -113,10 +117,13 @@ def serialize_request_event(event):
 
 def serialize_request(request):
     manager = request.assigned_manager
+    material = request.material
 
     return {
         "id": request.id,
         "product_id": request.product_id,
+        "material_id": request.material_id,
+        "material_name": material.name if material else None,
         "product_name": request.product_name,
         "color_name": request.color_name,
         "needs_measurements": request.needs_measurements,

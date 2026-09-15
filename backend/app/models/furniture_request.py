@@ -15,6 +15,10 @@ class FurnitureRequest(Base):
         ForeignKey("products.id"),
         nullable=True
     )
+    material_id: Mapped[int | None] = mapped_column(
+        ForeignKey("materials.id", ondelete="SET NULL"),
+        nullable=True
+    )
 
     product_name: Mapped[str] = mapped_column(
         String(255),
@@ -95,6 +99,10 @@ class FurnitureRequest(Base):
     )
     product: Mapped["Product | None"] = relationship(
         "Product",
+        back_populates="furniture_requests"
+    )
+    material: Mapped["Material | None"] = relationship(
+        "Material",
         back_populates="furniture_requests"
     )
     assigned_manager: Mapped["User | None"] = relationship(
