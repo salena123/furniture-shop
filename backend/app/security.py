@@ -132,6 +132,16 @@ def get_current_user(
     return user
 
 
+def get_optional_current_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+) -> User | None:
+    if credentials is None:
+        return None
+
+    return get_current_user(credentials, db)
+
+
 def require_roles(*roles: str) -> Callable[[User], User]:
     def dependency(current_user: User = Depends(get_current_user)) -> User:
         if current_user.role not in roles:

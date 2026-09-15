@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
-from app.security import hash_password, require_admin
+from app.security import hash_password, require_admin, require_manager_or_admin
 
 
 router = APIRouter(
@@ -117,6 +117,22 @@ def get_users(
 
 
 @router.get(
+    "/managers",
+    response_model=list[UserResponse]
+)
+def get_managers(
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager_or_admin)
+):
+    return db.query(User).filter(
+        User.role.in_(["admin", "manager"])
+    ).order_by(
+        User.name,
+        User.id
+    ).all()
+
+
+@router.get(
     "/{user_id}",
     response_model=UserResponse
 )
@@ -141,6 +157,13 @@ def update_user(
     user = _get_user_or_404(user_id, db)
     update_data = user_data.model_dump(exclude_unset=True)
 
+    for field in {"login", "name", "role"}:
+        if field in update_data and update_data[field] is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Поле {field} не может быть пустым"
+            )
+
     if "login" in update_data:
         _ensure_login_is_free(update_data["login"], db, current_user_id=user.id)
         user.login = update_data["login"]
@@ -148,7 +171,7 @@ def update_user(
         user.name = update_data["name"]
     if "email" in update_data:
         user.email = update_data["email"]
-    if "password" in update_data:
+    if "password" in update_data and update_data["password"] is not None:
         user.password_hash = hash_password(update_data["password"])
     if "role" in update_data:
         user.role = update_data["role"]

@@ -1,21 +1,34 @@
 from datetime import datetime, timezone
 
-from fastapi import Depends, APIRouter, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import Depends, APIRouter, HTTPException, Query
+from sqlalchemy import or_
+from sqlalchemy.orm import Session, selectinload
+
 from app.database import get_db
+from app.models.attribute_value import AttributeValue
+from app.models.furniture_comment import FurnitureComment
+from app.models.furniture_request import FurnitureRequest
 from app.models.product import Product
+from app.models.product_attribute import ProductAttribute
 from app.models.request_event import RequestEvent
 from app.models.user import User
-from app.models.furniture_request import FurnitureRequest
 from app.schemas.furniture_request import (
     FurnitureRequestCreate,
+    FurnitureRequestDetailResponse,
     FurnitureRequestManagerUpdate,
     FurnitureRequestResponse,
     FurnitureRequestStatusUpdate,
+    FurnitureRequestUpdate,
+    RequestEventResponse,
     RequestStatus,
-    RequestEventResponse
 )
 from app.security import require_admin, require_manager_or_admin
+from app.services.serializers import (
+    serialize_request,
+    serialize_request_detail,
+    serialize_request_event,
+)
+
 
 router = APIRouter(
     prefix="/api/requests",
@@ -23,8 +36,24 @@ router = APIRouter(
 )
 
 
+def _request_query(db: Session):
+    return db.query(FurnitureRequest).options(
+        selectinload(FurnitureRequest.assigned_manager),
+        selectinload(FurnitureRequest.comments)
+        .selectinload(FurnitureComment.user),
+        selectinload(FurnitureRequest.events)
+        .selectinload(RequestEvent.user),
+        selectinload(FurnitureRequest.product)
+        .selectinload(Product.images),
+        selectinload(FurnitureRequest.product)
+        .selectinload(Product.product_attributes)
+        .selectinload(ProductAttribute.attribute_value)
+        .selectinload(AttributeValue.attribute),
+    )
+
+
 def _get_request_or_404(request_id: int, db: Session) -> FurnitureRequest:
-    request = db.query(FurnitureRequest).filter(
+    request = _request_query(db).filter(
         FurnitureRequest.id == request_id
     ).first()
 
@@ -35,6 +64,63 @@ def _get_request_or_404(request_id: int, db: Session) -> FurnitureRequest:
         )
 
     return request
+
+
+def _get_product_or_404(product_id: int, db: Session) -> Product:
+    product = db.query(Product).filter(
+        Product.id == product_id
+    ).first()
+
+    if not product:
+        raise HTTPException(
+            status_code=404,
+            detail="Товар не найден"
+        )
+
+    return product
+
+
+def _get_assignable_manager_or_404(
+    manager_id: int,
+    db: Session,
+) -> User:
+    manager = db.query(User).filter(
+        User.id == manager_id
+    ).first()
+
+    if not manager:
+        raise HTTPException(
+            status_code=404,
+            detail="Менеджер не найден"
+        )
+
+    if manager.role not in {"admin", "manager"}:
+        raise HTTPException(
+            status_code=400,
+            detail="Заявку можно назначить только сотруднику"
+        )
+
+    return manager
+
+
+def _add_request_event(
+    request: FurnitureRequest,
+    user: User,
+    event_type: str,
+    db: Session,
+    old_status: str | None = None,
+    new_status: str | None = None,
+    message: str | None = None,
+) -> None:
+    event = RequestEvent(
+        request_id=request.id,
+        user_id=user.id,
+        event_type=event_type,
+        old_status=old_status,
+        new_status=new_status,
+        message=message
+    )
+    db.add(event)
 
 
 def _set_request_timestamps(request: FurnitureRequest, status: str) -> None:
@@ -50,6 +136,69 @@ def _set_request_timestamps(request: FurnitureRequest, status: str) -> None:
         request.completed_at = None
 
 
+def _change_request_status(
+    request: FurnitureRequest,
+    new_status: RequestStatus,
+    current_user: User,
+    db: Session,
+) -> None:
+    old_status = request.status
+
+    if old_status == new_status:
+        return
+
+    request.status = new_status
+    _set_request_timestamps(request, new_status)
+    _add_request_event(
+        request=request,
+        user=current_user,
+        event_type="status_changed",
+        old_status=old_status,
+        new_status=new_status,
+        message=f"Статус изменён с {old_status} на {new_status}",
+        db=db,
+    )
+
+
+def _assign_request_manager(
+    request: FurnitureRequest,
+    manager_id: int | None,
+    current_user: User,
+    db: Session,
+) -> None:
+    if (
+        current_user.role == "manager"
+        and manager_id not in {current_user.id, None}
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="Менеджер может назначить заявку только на себя"
+        )
+
+    manager = None
+    if manager_id is not None:
+        manager = _get_assignable_manager_or_404(manager_id, db)
+
+    old_manager_id = request.assigned_manager_id
+    new_manager_id = manager.id if manager else None
+
+    if old_manager_id == new_manager_id:
+        return
+
+    request.assigned_manager_id = new_manager_id
+    request.updated_at = datetime.now(timezone.utc)
+    _add_request_event(
+        request=request,
+        user=current_user,
+        event_type="manager_assigned",
+        message=(
+            f"Ответственный изменён с {old_manager_id} "
+            f"на {new_manager_id}"
+        ),
+        db=db,
+    )
+
+
 @router.post(
     "/",
     response_model=FurnitureRequestResponse,
@@ -59,15 +208,7 @@ def create_request(
     db: Session = Depends(get_db)
 ):
     if request.product_id is not None:
-        product = db.query(Product).filter(
-            Product.id == request.product_id
-        ).first()
-
-        if not product:
-            raise HTTPException(
-                status_code=404,
-                detail="Товар не найден"
-            )
+        _get_product_or_404(request.product_id, db)
 
     new_request = FurnitureRequest(
         product_id=request.product_id,
@@ -83,7 +224,9 @@ def create_request(
     db.add(new_request)
     db.commit()
     db.refresh(new_request)
-    return new_request
+
+    return serialize_request(new_request)
+
 
 @router.get(
     "/",
@@ -92,25 +235,93 @@ def create_request(
 def get_requests(
     status: RequestStatus | None = None,
     assigned_manager_id: int | None = None,
+    unassigned_only: bool = False,
+    product_id: int | None = None,
+    phone: str | None = None,
+    search: str | None = None,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
     _current_user: User = Depends(require_manager_or_admin)
 ):
-    query = db.query(FurnitureRequest)
+    query = _request_query(db)
 
     if status is not None:
         query = query.filter(
             FurnitureRequest.status == status
         )
 
-    if assigned_manager_id is not None:
+    if unassigned_only:
+        query = query.filter(
+            FurnitureRequest.assigned_manager_id.is_(None)
+        )
+    elif assigned_manager_id is not None:
         query = query.filter(
             FurnitureRequest.assigned_manager_id == assigned_manager_id
         )
 
-    return query.order_by(
+    if product_id is not None:
+        query = query.filter(
+            FurnitureRequest.product_id == product_id
+        )
+
+    if phone:
+        query = query.filter(
+            FurnitureRequest.phone.ilike(f"%{phone}%")
+        )
+
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            or_(
+                FurnitureRequest.product_name.ilike(search_filter),
+                FurnitureRequest.client_name.ilike(search_filter),
+                FurnitureRequest.phone.ilike(search_filter),
+                FurnitureRequest.comment.ilike(search_filter),
+            )
+        )
+
+    requests = query.order_by(
         FurnitureRequest.created_at.desc(),
         FurnitureRequest.id.desc()
-    ).all()
+    ).offset(offset).limit(limit).all()
+
+    return [
+        serialize_request(request)
+        for request in requests
+    ]
+
+
+@router.get(
+    "/my",
+    response_model=list[FurnitureRequestResponse]
+)
+def get_my_requests(
+    status: RequestStatus | None = None,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_manager_or_admin)
+):
+    query = _request_query(db).filter(
+        FurnitureRequest.assigned_manager_id == current_user.id
+    )
+
+    if status is not None:
+        query = query.filter(
+            FurnitureRequest.status == status
+        )
+
+    requests = query.order_by(
+        FurnitureRequest.created_at.desc(),
+        FurnitureRequest.id.desc()
+    ).offset(offset).limit(limit).all()
+
+    return [
+        serialize_request(request)
+        for request in requests
+    ]
+
 
 @router.get(
     "/{request_id}",
@@ -121,7 +332,67 @@ def get_request(
     db: Session = Depends(get_db),
     _current_user: User = Depends(require_manager_or_admin)
 ):
-    return _get_request_or_404(request_id, db)
+    return serialize_request(
+        _get_request_or_404(request_id, db)
+    )
+
+
+@router.get(
+    "/{request_id}/details",
+    response_model=FurnitureRequestDetailResponse
+)
+def get_request_details(
+    request_id: int,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_manager_or_admin)
+):
+    return serialize_request_detail(
+        _get_request_or_404(request_id, db)
+    )
+
+
+@router.patch(
+    "/{request_id}",
+    response_model=FurnitureRequestResponse
+)
+def patch_request(
+    request_id: int,
+    request_data: FurnitureRequestUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_manager_or_admin)
+):
+    request = _get_request_or_404(request_id, db)
+    update_data = request_data.model_dump(exclude_unset=True)
+
+    for field in {"product_name", "needs_measurements", "client_name", "phone"}:
+        if field in update_data and update_data[field] is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Поле {field} не может быть пустым"
+            )
+
+    if "product_id" in update_data and update_data["product_id"] is not None:
+        _get_product_or_404(update_data["product_id"], db)
+
+    if "status" in update_data:
+        new_status = update_data.pop("status")
+        if new_status is not None:
+            _change_request_status(request, new_status, current_user, db)
+
+    if "assigned_manager_id" in update_data:
+        manager_id = update_data.pop("assigned_manager_id")
+        _assign_request_manager(request, manager_id, current_user, db)
+
+    for field, value in update_data.items():
+        setattr(request, field, value)
+
+    if update_data:
+        request.updated_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(request)
+
+    return serialize_request(request)
 
 
 @router.patch(
@@ -135,26 +406,12 @@ def update_request_status(
     current_user: User = Depends(require_manager_or_admin)
 ):
     request = _get_request_or_404(request_id, db)
-    old_status = request.status
-
-    if old_status != status_data.status:
-        request.status = status_data.status
-        _set_request_timestamps(request, status_data.status)
-
-        event = RequestEvent(
-            request_id=request.id,
-            user_id=current_user.id,
-            event_type="status_changed",
-            old_status=old_status,
-            new_status=status_data.status,
-            message=f"Статус изменён с {old_status} на {status_data.status}"
-        )
-        db.add(event)
+    _change_request_status(request, status_data.status, current_user, db)
 
     db.commit()
     db.refresh(request)
 
-    return request
+    return serialize_request(request)
 
 
 @router.patch(
@@ -168,55 +425,17 @@ def update_request_manager(
     current_user: User = Depends(require_manager_or_admin)
 ):
     request = _get_request_or_404(request_id, db)
-
-    if (
-        current_user.role == "manager"
-        and manager_data.assigned_manager_id not in {current_user.id, None}
-    ):
-        raise HTTPException(
-            status_code=403,
-            detail="Менеджер может назначить заявку только на себя"
-        )
-
-    manager = None
-    if manager_data.assigned_manager_id is not None:
-        manager = db.query(User).filter(
-            User.id == manager_data.assigned_manager_id
-        ).first()
-
-        if not manager:
-            raise HTTPException(
-                status_code=404,
-                detail="Менеджер не найден"
-            )
-
-        if manager.role not in {"admin", "manager"}:
-            raise HTTPException(
-                status_code=400,
-                detail="Заявку можно назначить только сотруднику"
-            )
-
-    old_manager_id = request.assigned_manager_id
-
-    if old_manager_id != manager_data.assigned_manager_id:
-        request.assigned_manager_id = manager.id if manager else None
-        request.updated_at = datetime.now(timezone.utc)
-
-        event = RequestEvent(
-            request_id=request.id,
-            user_id=current_user.id,
-            event_type="manager_assigned",
-            message=(
-                f"Ответственный изменён с {old_manager_id} "
-                f"на {request.assigned_manager_id}"
-            )
-        )
-        db.add(event)
+    _assign_request_manager(
+        request,
+        manager_data.assigned_manager_id,
+        current_user,
+        db
+    )
 
     db.commit()
     db.refresh(request)
 
-    return request
+    return serialize_request(request)
 
 
 @router.patch(
@@ -229,27 +448,12 @@ def take_request(
     current_user: User = Depends(require_manager_or_admin)
 ):
     request = _get_request_or_404(request_id, db)
-    old_manager_id = request.assigned_manager_id
-
-    if old_manager_id != current_user.id:
-        request.assigned_manager_id = current_user.id
-        request.updated_at = datetime.now(timezone.utc)
-
-        event = RequestEvent(
-            request_id=request.id,
-            user_id=current_user.id,
-            event_type="manager_assigned",
-            message=(
-                f"Ответственный изменён с {old_manager_id} "
-                f"на {current_user.id}"
-            )
-        )
-        db.add(event)
+    _assign_request_manager(request, current_user.id, current_user, db)
 
     db.commit()
     db.refresh(request)
 
-    return request
+    return serialize_request(request)
 
 
 @router.get(
@@ -261,14 +465,15 @@ def get_request_events(
     db: Session = Depends(get_db),
     _current_user: User = Depends(require_manager_or_admin)
 ):
-    _get_request_or_404(request_id, db)
+    request = _get_request_or_404(request_id, db)
 
-    return db.query(RequestEvent).filter(
-        RequestEvent.request_id == request_id
-    ).order_by(
-        RequestEvent.created_at,
-        RequestEvent.id
-    ).all()
+    return [
+        serialize_request_event(event)
+        for event in sorted(
+            request.events,
+            key=lambda event: (event.created_at, event.id),
+        )
+    ]
 
 
 @router.delete(

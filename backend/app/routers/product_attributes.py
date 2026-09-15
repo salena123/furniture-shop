@@ -70,42 +70,6 @@ def add_attribute_to_product(
     }
 
 
-@router.get(
-    "/{product_id}/attributes"
-)
-def get_product_attributes(
-    product_id: int,
-    db: Session = Depends(get_db)
-):
-    product = db.query(Product).filter(
-        Product.id == product_id
-    ).first()
-
-    if not product:
-        raise HTTPException(
-            status_code=404,
-            detail="Товар не найден"
-        )
-
-    product_attributes = db.query(ProductAttribute).filter(
-        ProductAttribute.product_id == product_id
-    ).all()
-
-    result = []
-
-    for product_attribute in product_attributes:
-        attribute_value = product_attribute.attribute_value
-
-        result.append({
-            "id": attribute_value.id,
-            "attribute_id": attribute_value.attribute_id,
-            "value": attribute_value.value,
-            "sort_order": attribute_value.sort_order
-        })
-
-    return result
-
-
 @router.delete(
     "/{product_id}/attributes/{attribute_value_id}"
 )

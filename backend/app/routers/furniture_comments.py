@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -12,6 +14,7 @@ from app.schemas.furniture_comment import (
     FurnitureCommentUpdate
 )
 from app.security import require_manager_or_admin
+from app.services.serializers import serialize_comment
 
 router = APIRouter(
     prefix="/api/requests",
@@ -44,6 +47,7 @@ def create_comment(
         user_id=current_user.id,
         comment_text=comment.comment_text
     )
+    request.updated_at = datetime.now(timezone.utc)
 
     db.add(new_comment)
     db.flush()
@@ -58,7 +62,7 @@ def create_comment(
     db.commit()
     db.refresh(new_comment)
 
-    return new_comment
+    return serialize_comment(new_comment)
 
 
 @router.get(
@@ -86,7 +90,10 @@ def get_comments(
         FurnitureComment.created_at
     ).all()
 
-    return comments
+    return [
+        serialize_comment(comment)
+        for comment in comments
+    ]
 
 
 @router.get(
@@ -110,7 +117,7 @@ def get_comment(
             detail="Комментарий не найден"
         )
 
-    return comment
+    return serialize_comment(comment)
 
 
 @router.put(
@@ -145,7 +152,7 @@ def update_comment(
     db.commit()
     db.refresh(comment)
 
-    return comment
+    return serialize_comment(comment)
 
 
 @router.delete(

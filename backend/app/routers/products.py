@@ -1,12 +1,33 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from pathlib import Path
+from uuid import uuid4
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session, selectinload
+from starlette.datastructures import UploadFile as StarletteUploadFile
+
 from app.database import get_db
+from app.models.attribute_value import AttributeValue
+from app.models.category import Category
 from app.models.product import Product
-from app.models.user import User
-from app.schemas.product import ProductCreate, ProductResponse
+from app.models.product_attribute import ProductAttribute
 from app.models.product_image import ProductImage
-from app.schemas.product import ProductImageCreate, ProductImageResponse
-from app.security import require_admin
+from app.models.user import User
+from app.schemas.product import (
+    ProductAttributeValueResponse,
+    ProductCreate,
+    ProductDetailResponse,
+    ProductImageCreate,
+    ProductImageResponse,
+    ProductUpdate,
+)
+from app.security import get_optional_current_user, require_admin
+from app.services.serializers import (
+    serialize_product,
+    serialize_product_attribute,
+    serialize_product_image,
+)
 
 
 router = APIRouter(
@@ -14,15 +35,157 @@ router = APIRouter(
     tags=["Товары"]
 )
 
+UPLOAD_ROOT = Path(__file__).resolve().parents[2] / "static" / "uploads" / "products"
+UPLOAD_URL_PREFIX = "/static/uploads/products"
+ALLOWED_IMAGE_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+}
+NON_NULL_PRODUCT_FIELDS = {
+    "product_name",
+    "slug",
+    "category_id",
+    "price",
+    "is_custom",
+    "is_active",
+    "sort_order",
+}
+
+
+def _product_query(db: Session):
+    return db.query(Product).options(
+        selectinload(Product.images),
+        selectinload(Product.product_attributes)
+        .selectinload(ProductAttribute.attribute_value)
+        .selectinload(AttributeValue.attribute),
+    )
+
+
+def _get_product_or_404(
+    product_id: int,
+    db: Session,
+    include_inactive: bool = True,
+) -> Product:
+    query = _product_query(db).filter(
+        Product.id == product_id
+    )
+
+    if not include_inactive:
+        query = query.filter(
+            Product.is_active == True
+        )
+
+    product = query.first()
+
+    if not product:
+        raise HTTPException(
+            status_code=404,
+            detail="Товар не найден"
+        )
+
+    return product
+
+
+def _get_category_or_404(category_id: int, db: Session) -> Category:
+    category = db.query(Category).filter(
+        Category.id == category_id
+    ).first()
+
+    if not category:
+        raise HTTPException(
+            status_code=404,
+            detail="Категория не найдена"
+        )
+
+    return category
+
+
+def _ensure_product_slug_is_free(
+    slug: str,
+    db: Session,
+    current_product_id: int | None = None,
+) -> None:
+    existing_product = db.query(Product).filter(
+        Product.slug == slug
+    ).first()
+
+    if existing_product and existing_product.id != current_product_id:
+        raise HTTPException(
+            status_code=400,
+            detail="Товар с таким slug уже существует"
+        )
+
+
+def _ensure_main_image_is_free(
+    product_id: int,
+    db: Session,
+    current_image_id: int | None = None,
+) -> None:
+    query = db.query(ProductImage).filter(
+        ProductImage.product_id == product_id,
+        ProductImage.is_main == True
+    )
+
+    if current_image_id is not None:
+        query = query.filter(
+            ProductImage.id != current_image_id
+        )
+
+    if query.first():
+        raise HTTPException(
+            status_code=400,
+            detail="У товара уже есть главная фотография"
+        )
+
+
+def _commit_product_changes(db: Session) -> None:
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(
+            status_code=400,
+            detail="Не удалось сохранить товар: проверьте уникальность slug и связи"
+        )
+
+
+def _parse_bool(value) -> bool:
+    if isinstance(value, bool):
+        return value
+
+    if value is None:
+        return False
+
+    return str(value).lower() in {"1", "true", "yes", "on", "да"}
+
+
+def _parse_int(value, default: int = 0) -> int:
+    if value is None or value == "":
+        return default
+
+    try:
+        return int(value)
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail="sort_order должен быть числом"
+        )
+
+
 @router.post(
     "/",
-    response_model=ProductResponse,
+    response_model=ProductDetailResponse,
 )
 def create_product(
-        product: ProductCreate,
-        db: Session = Depends(get_db),
-        _current_user: User = Depends(require_admin)
+    product: ProductCreate,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
 ):
+    _get_category_or_404(product.category_id, db)
+    _ensure_product_slug_is_free(product.slug, db)
+
     new_product = Product(
         product_name=product.product_name,
         slug=product.slug,
@@ -42,44 +205,130 @@ def create_product(
     )
 
     db.add(new_product)
-    db.commit()
+    _commit_product_changes(db)
     db.refresh(new_product)
-    return new_product
+
+    return serialize_product(new_product)
+
 
 @router.get(
     "/",
-    response_model=list[ProductResponse],
+    response_model=list[ProductDetailResponse],
 )
 def get_products(
-        db: Session = Depends(get_db)
-    ):
-    products = db.query(Product).order_by(
+    category_id: int | None = None,
+    search: str | None = None,
+    include_inactive: bool = False,
+    limit: int = Query(20, ge=1, le=100),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_optional_current_user),
+):
+    if include_inactive and (not current_user or current_user.role != "admin"):
+        raise HTTPException(
+            status_code=403,
+            detail="Неактивные товары может смотреть только администратор"
+        )
+
+    query = _product_query(db)
+
+    if not include_inactive:
+        query = query.filter(
+            Product.is_active == True
+        )
+
+    if category_id is not None:
+        query = query.filter(
+            Product.category_id == category_id
+        )
+
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            or_(
+                Product.product_name.ilike(search_filter),
+                Product.description.ilike(search_filter),
+                Product.short_description.ilike(search_filter),
+                Product.article.ilike(search_filter),
+                Product.material.ilike(search_filter),
+                Product.color.ilike(search_filter),
+            )
+        )
+
+    products = query.order_by(
         Product.sort_order,
         Product.id
-        ).all()
-    return products
+    ).offset(offset).limit(limit).all()
+
+    return [
+        serialize_product(product)
+        for product in products
+    ]
+
 
 @router.get(
-    "/{product_id}",
-    response_model=ProductResponse
+    "/slug/{slug}",
+    response_model=ProductDetailResponse
 )
-def get_product(
-    product_id: int,
-    db: Session = Depends(get_db)
+def get_product_by_slug(
+    slug: str,
+    include_inactive: bool = False,
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_optional_current_user),
 ):
-    product = db.query(Product).filter(
-        Product.id == product_id
-    ).first()
+    if include_inactive and (not current_user or current_user.role != "admin"):
+        raise HTTPException(
+            status_code=403,
+            detail="Неактивные товары может смотреть только администратор"
+        )
+
+    query = _product_query(db).filter(
+        Product.slug == slug
+    )
+
+    if not include_inactive:
+        query = query.filter(
+            Product.is_active == True
+        )
+
+    product = query.first()
+
     if not product:
         raise HTTPException(
             status_code=404,
             detail="Товар не найден"
         )
-    return product
+
+    return serialize_product(product)
+
+
+@router.get(
+    "/{product_id}",
+    response_model=ProductDetailResponse
+)
+def get_product(
+    product_id: int,
+    include_inactive: bool = False,
+    db: Session = Depends(get_db),
+    current_user: User | None = Depends(get_optional_current_user),
+):
+    if include_inactive and (not current_user or current_user.role != "admin"):
+        raise HTTPException(
+            status_code=403,
+            detail="Неактивные товары может смотреть только администратор"
+        )
+
+    product = _get_product_or_404(
+        product_id,
+        db,
+        include_inactive=include_inactive
+    )
+    return serialize_product(product)
+
 
 @router.put(
     "/{product_id}",
-    response_model=ProductResponse,
+    response_model=ProductDetailResponse,
 )
 def update_product(
     product_id: int,
@@ -87,14 +336,13 @@ def update_product(
     db: Session = Depends(get_db),
     _current_user: User = Depends(require_admin)
 ):
-    product = db.query(Product).filter(
-        Product.id == product_id
-    ).first()
-    if not product:
-        raise HTTPException(
-            status_code=404,
-            detail="Товар не найден"
-        )
+    product = _get_product_or_404(product_id, db)
+    _get_category_or_404(product_data.category_id, db)
+    _ensure_product_slug_is_free(
+        product_data.slug,
+        db,
+        current_product_id=product.id,
+    )
 
     product.product_name = product_data.product_name
     product.slug = product_data.slug
@@ -112,9 +360,50 @@ def update_product(
     product.meta_title = product_data.meta_title
     product.meta_description = product_data.meta_description
 
-    db.commit()
+    _commit_product_changes(db)
     db.refresh(product)
-    return product
+
+    return serialize_product(product)
+
+
+@router.patch(
+    "/{product_id}",
+    response_model=ProductDetailResponse,
+)
+def patch_product(
+    product_id: int,
+    product_data: ProductUpdate,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
+):
+    product = _get_product_or_404(product_id, db)
+    update_data = product_data.model_dump(exclude_unset=True)
+
+    for field in NON_NULL_PRODUCT_FIELDS:
+        if field in update_data and update_data[field] is None:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Поле {field} не может быть пустым"
+            )
+
+    if "category_id" in update_data:
+        _get_category_or_404(update_data["category_id"], db)
+
+    if "slug" in update_data:
+        _ensure_product_slug_is_free(
+            update_data["slug"],
+            db,
+            current_product_id=product.id,
+        )
+
+    for field, value in update_data.items():
+        setattr(product, field, value)
+
+    _commit_product_changes(db)
+    db.refresh(product)
+
+    return serialize_product(product)
+
 
 @router.delete(
     "/{product_id}",
@@ -124,18 +413,13 @@ def delete_product(
     db: Session = Depends(get_db),
     _current_user: User = Depends(require_admin)
 ):
-    product = db.query(Product).filter(
-        Product.id == product_id
-    ).first()
-    if not product:
-        raise HTTPException(
-            status_code=404,
-            detail= "Товар не найден"
-        )
+    product = _get_product_or_404(product_id, db)
 
     db.delete(product)
     db.commit()
-    return { "message" : "Товар успешно удалён"}
+
+    return {"message": "Товар успешно удалён"}
+
 
 @router.post(
     "/{product_id}/images",
@@ -147,28 +431,11 @@ def add_product_image_to_product(
     db: Session = Depends(get_db),
     _current_user: User = Depends(require_admin)
 ):
-    product = db.query(Product).filter(
-        Product.id == product_id
-    ).first()
-
-    if not product:
-        raise HTTPException(
-            status_code=404,
-            detail= "Товар не найден"
-        )
+    product = _get_product_or_404(product_id, db)
 
     if image.is_main:
-        main_image = db.query(ProductImage).filter(
-            ProductImage.product_id == product_id,
-            ProductImage.is_main == True
-        ).first()
+        _ensure_main_image_is_free(product.id, db)
 
-        if main_image:
-            raise HTTPException(
-                status_code=400,
-                detail="У товара уже есть главная фотография"
-            )
-    
     new_image = ProductImage(
         product_id=product.id,
         image_url=image.image_url,
@@ -180,7 +447,109 @@ def add_product_image_to_product(
     db.add(new_image)
     db.commit()
     db.refresh(new_image)
-    return new_image
+
+    return serialize_product_image(new_image)
+
+
+@router.post(
+    "/{product_id}/images/upload",
+    response_model=ProductImageResponse,
+    openapi_extra={
+        "requestBody": {
+            "required": True,
+            "content": {
+                "multipart/form-data": {
+                    "schema": {
+                        "type": "object",
+                        "required": ["file"],
+                        "properties": {
+                            "file": {
+                                "type": "string",
+                                "format": "binary",
+                            },
+                            "alt_text": {
+                                "type": "string",
+                            },
+                            "sort_order": {
+                                "type": "integer",
+                                "default": 0,
+                            },
+                            "is_main": {
+                                "type": "boolean",
+                                "default": False,
+                            },
+                        },
+                    }
+                }
+            },
+        }
+    }
+)
+async def upload_product_image(
+    product_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin)
+):
+    product = _get_product_or_404(product_id, db)
+
+    try:
+        form = await request.form()
+    except (AssertionError, RuntimeError):
+        raise HTTPException(
+            status_code=500,
+            detail="Для загрузки файлов установите пакет python-multipart"
+        )
+
+    upload = form.get("file")
+    if not isinstance(upload, StarletteUploadFile):
+        raise HTTPException(
+            status_code=400,
+            detail="Файл не передан"
+        )
+
+    if upload.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=400,
+            detail="Можно загрузить только jpg, png, webp или gif"
+        )
+
+    is_main = _parse_bool(form.get("is_main"))
+    sort_order = _parse_int(form.get("sort_order"), default=0)
+    alt_text = form.get("alt_text")
+
+    if is_main:
+        _ensure_main_image_is_free(product.id, db)
+
+    file_bytes = await upload.read()
+    if not file_bytes:
+        raise HTTPException(
+            status_code=400,
+            detail="Файл пустой"
+        )
+
+    extension = ALLOWED_IMAGE_TYPES[upload.content_type]
+    file_name = f"{uuid4().hex}{extension}"
+    upload_dir = UPLOAD_ROOT / str(product.id)
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    file_path = upload_dir / file_name
+    file_path.write_bytes(file_bytes)
+
+    image_url = f"{UPLOAD_URL_PREFIX}/{product.id}/{file_name}"
+    new_image = ProductImage(
+        product_id=product.id,
+        image_url=image_url,
+        alt_text=alt_text,
+        sort_order=sort_order,
+        is_main=is_main,
+    )
+
+    db.add(new_image)
+    db.commit()
+    db.refresh(new_image)
+
+    return serialize_product_image(new_image)
+
 
 @router.get(
     "/{product_id}/images",
@@ -190,18 +559,15 @@ def get_product_images(
     product_id: int,
     db: Session = Depends(get_db)
 ):
-    product = db.query(Product).filter(
-        Product.id == product_id
-    ).first()
+    product = _get_product_or_404(product_id, db, include_inactive=False)
 
-    if not product:
-        raise HTTPException(
-            status_code=404,
-            detail="Товар не найден"
+    return [
+        serialize_product_image(image)
+        for image in sorted(
+            product.images,
+            key=lambda image: (image.sort_order, image.id),
         )
-
-    images = product.images
-    return images
+    ]
 
 
 @router.get(
@@ -222,7 +588,8 @@ def get_product_image(
             detail="Фотография не найдена"
         )
 
-    return image
+    return serialize_product_image(image)
+
 
 @router.put(
     "/images/{image_id}",
@@ -245,17 +612,11 @@ def update_info_product_image(
         )
 
     if image_data.is_main:
-        main_image = db.query(ProductImage).filter(
-            ProductImage.product_id == image.product_id,
-            ProductImage.is_main == True,
-            ProductImage.id != image_id
-        ).first()
-
-        if main_image:
-            raise HTTPException(
-                status_code=400,
-                detail="У товара уже есть главаная фотография"
-            )
+        _ensure_main_image_is_free(
+            image.product_id,
+            db,
+            current_image_id=image.id,
+        )
 
     image.image_url = image_data.image_url
     image.alt_text = image_data.alt_text
@@ -264,7 +625,9 @@ def update_info_product_image(
 
     db.commit()
     db.refresh(image)
-    return image
+
+    return serialize_product_image(image)
+
 
 @router.delete(
     "/images/{image_id}",
@@ -286,4 +649,27 @@ def delete_image(
 
     db.delete(image)
     db.commit()
-    return { "message" : "Фотография успешно удалена"}
+
+    return {"message": "Фотография успешно удалена"}
+
+
+@router.get(
+    "/{product_id}/attributes",
+    response_model=list[ProductAttributeValueResponse]
+)
+def get_product_attributes(
+    product_id: int,
+    db: Session = Depends(get_db)
+):
+    product = _get_product_or_404(product_id, db, include_inactive=False)
+
+    return [
+        serialize_product_attribute(product_attribute)
+        for product_attribute in sorted(
+            product.product_attributes,
+            key=lambda product_attribute: (
+                product_attribute.attribute_value.sort_order,
+                product_attribute.attribute_value.id,
+            ),
+        )
+    ]
