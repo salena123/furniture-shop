@@ -16,6 +16,7 @@ from app.models.user import User
 from app.schemas.furniture_request import (
     FurnitureRequestCreate,
     FurnitureRequestDetailResponse,
+    FurnitureRequestListResponse,
     FurnitureRequestManagerUpdate,
     FurnitureRequestResponse,
     FurnitureRequestStatusUpdate,
@@ -23,7 +24,9 @@ from app.schemas.furniture_request import (
     RequestEventResponse,
     RequestStatus,
 )
+from app.schemas.catalog import RequestStatusOption
 from app.security import require_admin, require_manager_or_admin
+from app.services.pagination import paginate_query
 from app.services.serializers import (
     serialize_request,
     serialize_request_detail,
@@ -36,6 +39,16 @@ router = APIRouter(
     tags=["Заявки"]
 )
 
+REQUEST_STATUS_OPTIONS = [
+    {"value": "new", "label": "Новая"},
+    {"value": "in_progress", "label": "В работе"},
+    {"value": "contacted", "label": "Связались"},
+    {"value": "measurement_scheduled", "label": "Замер назначен"},
+    {"value": "quote_prepared", "label": "Расчёт подготовлен"},
+    {"value": "completed", "label": "Завершена"},
+    {"value": "cancelled", "label": "Отменена"},
+]
+
 
 def _request_query(db: Session):
     return db.query(FurnitureRequest).options(
@@ -47,6 +60,8 @@ def _request_query(db: Session):
         .selectinload(RequestEvent.user),
         selectinload(FurnitureRequest.product)
         .selectinload(Product.material_ref),
+        selectinload(FurnitureRequest.product)
+        .selectinload(Product.category),
         selectinload(FurnitureRequest.product)
         .selectinload(Product.images),
         selectinload(FurnitureRequest.product)
@@ -256,7 +271,7 @@ def create_request(
 
 @router.get(
     "/",
-    response_model=list[FurnitureRequestResponse]
+    response_model=FurnitureRequestListResponse
 )
 def get_requests(
     status: RequestStatus | None = None,
@@ -314,20 +329,26 @@ def get_requests(
             )
         )
 
-    requests = query.order_by(
+    query = query.order_by(
         FurnitureRequest.created_at.desc(),
         FurnitureRequest.id.desc()
-    ).offset(offset).limit(limit).all()
+    )
+    requests, total = paginate_query(query, limit, offset)
 
-    return [
-        serialize_request(request)
-        for request in requests
-    ]
+    return {
+        "items": [
+            serialize_request(request)
+            for request in requests
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @router.get(
     "/my",
-    response_model=list[FurnitureRequestResponse]
+    response_model=FurnitureRequestListResponse
 )
 def get_my_requests(
     status: RequestStatus | None = None,
@@ -345,15 +366,31 @@ def get_my_requests(
             FurnitureRequest.status == status
         )
 
-    requests = query.order_by(
+    query = query.order_by(
         FurnitureRequest.created_at.desc(),
         FurnitureRequest.id.desc()
-    ).offset(offset).limit(limit).all()
+    )
+    requests, total = paginate_query(query, limit, offset)
 
-    return [
-        serialize_request(request)
-        for request in requests
-    ]
+    return {
+        "items": [
+            serialize_request(request)
+            for request in requests
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@router.get(
+    "/statuses",
+    response_model=list[RequestStatusOption]
+)
+def get_request_statuses(
+    _current_user: User = Depends(require_manager_or_admin)
+):
+    return REQUEST_STATUS_OPTIONS
 
 
 @router.get(

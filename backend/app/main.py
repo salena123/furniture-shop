@@ -18,6 +18,7 @@ from app.routers.auth import router as auth_router
 from app.routers.users import router as users_router
 from app.routers.dashboard import router as dashboard_router
 from app.routers.materials import router as materials_router
+from app.routers.catalog import router as catalog_router
 
 app = FastAPI()
 
@@ -46,6 +47,7 @@ app.mount("/static", StaticFiles(directory=static_dir), name="static")
 app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(dashboard_router)
+app.include_router(catalog_router)
 app.include_router(furniture_requests_router)
 app.include_router(categories_router)
 app.include_router(materials_router)

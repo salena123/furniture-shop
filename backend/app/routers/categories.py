@@ -1,11 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.category import Category
 from app.models.user import User
-from app.schemas.category import CategoryCreate, CategoryResponse, CategoryUpdate
+from app.schemas.category import (
+    CategoryCreate,
+    CategoryListResponse,
+    CategoryResponse,
+    CategoryUpdate,
+)
 from app.security import get_optional_current_user, require_admin
+from app.services.pagination import paginate_query
 
 router = APIRouter(
     prefix="/api/categories",
@@ -98,11 +104,13 @@ def create_category(
 
 @router.get(
     "/",
-    response_model=list[CategoryResponse],
+    response_model=CategoryListResponse,
 )
 def get_categories(
     parent_id: int | None = None,
     include_inactive: bool = False,
+    limit: int = Query(100, ge=1, le=200),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
     current_user: User | None = Depends(get_optional_current_user),
 ):
@@ -124,11 +132,18 @@ def get_categories(
             Category.parent_id == parent_id
         )
 
-    categories = query.order_by(
+    query = query.order_by(
         Category.sort_order,
         Category.id
-        ).all()
-    return categories
+    )
+    categories, total = paginate_query(query, limit, offset)
+
+    return {
+        "items": categories,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @router.get(

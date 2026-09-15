@@ -50,8 +50,8 @@ def upgrade() -> None:
     sa.Column('password_hash', sa.Text(), nullable=False),
     sa.Column('role', sa.Enum('admin', 'manager', name='user_role'), nullable=False),
     sa.Column('last_login_at', sa.TIMESTAMP(timezone=True), nullable=True),
-    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False),
+    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('login')
     )
@@ -80,8 +80,8 @@ def upgrade() -> None:
     sa.Column('color', sa.String(length=50), nullable=True),
     sa.Column('meta_title', sa.String(length=100), nullable=True),
     sa.Column('meta_description', sa.Text(), nullable=True),
-    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False),
+    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False),
     sa.ForeignKeyConstraint(['category_id'], ['categories.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('slug')
@@ -98,8 +98,8 @@ def upgrade() -> None:
     sa.Column('status', sa.Enum('new', 'in_progress', 'contacted', 'measurement_scheduled', 'quote_prepared', 'completed', 'cancelled', name='request_status'), server_default='new', nullable=False),
     sa.Column('assigned_manager_id', sa.Integer(), nullable=True),
     sa.Column('comment', sa.Text(), nullable=True),
-    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False),
+    sa.Column('updated_at', sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False),
     sa.Column('contacted_at', sa.TIMESTAMP(timezone=True), nullable=True),
     sa.Column('completed_at', sa.TIMESTAMP(timezone=True), nullable=True),
     sa.ForeignKeyConstraint(['assigned_manager_id'], ['users.id'], ),
@@ -120,7 +120,7 @@ def upgrade() -> None:
     sa.Column('alt_text', sa.String(length=255), nullable=True),
     sa.Column('sort_order', sa.Integer(), server_default='0', nullable=False),
     sa.Column('is_main', sa.Boolean(), server_default='FALSE', nullable=False),
-    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False),
     sa.ForeignKeyConstraint(['product_id'], ['products.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -130,7 +130,7 @@ def upgrade() -> None:
     sa.Column('request_id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('comment_text', sa.Text(), nullable=False),
-    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False),
     sa.ForeignKeyConstraint(['request_id'], ['furniture_requests.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')
@@ -143,7 +143,7 @@ def upgrade() -> None:
     sa.Column('old_status', sa.Enum('new', 'in_progress', 'contacted', 'measurement_scheduled', 'quote_prepared', 'completed', 'cancelled', name='request_status'), nullable=True),
     sa.Column('new_status', sa.Enum('new', 'in_progress', 'contacted', 'measurement_scheduled', 'quote_prepared', 'completed', 'cancelled', name='request_status'), nullable=True),
     sa.Column('message', sa.Text(), nullable=True),
-    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.func.now(), nullable=False),
     sa.ForeignKeyConstraint(['request_id'], ['furniture_requests.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
     sa.PrimaryKeyConstraint('id')

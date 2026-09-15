@@ -9,8 +9,14 @@ from app.models.furniture_request import FurnitureRequest
 from app.models.material import Material
 from app.models.product import Product
 from app.models.user import User
-from app.schemas.material import MaterialCreate, MaterialResponse, MaterialUpdate
+from app.schemas.material import (
+    MaterialCreate,
+    MaterialListResponse,
+    MaterialResponse,
+    MaterialUpdate,
+)
 from app.security import require_admin
+from app.services.pagination import paginate_query
 
 
 router = APIRouter(
@@ -88,7 +94,7 @@ def create_material(
 
 @router.get(
     "/",
-    response_model=list[MaterialResponse]
+    response_model=MaterialListResponse
 )
 def get_materials(
     search: str | None = None,
@@ -103,10 +109,18 @@ def get_materials(
             Material.name.ilike(f"%{search}%")
         )
 
-    return query.order_by(
+    query = query.order_by(
         Material.name,
         Material.id
-    ).offset(offset).limit(limit).all()
+    )
+    materials, total = paginate_query(query, limit, offset)
+
+    return {
+        "items": materials,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @router.get(

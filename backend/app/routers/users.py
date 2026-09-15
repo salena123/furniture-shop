@@ -144,6 +144,10 @@ def get_user(
     return _get_user_or_404(user_id, db)
 
 
+@router.patch(
+    "/{user_id}",
+    response_model=UserResponse
+)
 @router.put(
     "/{user_id}",
     response_model=UserResponse

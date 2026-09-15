@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.schemas.furniture_comment import FurnitureCommentResponse
 from app.schemas.product import ProductDetailResponse
@@ -29,8 +29,13 @@ class FurnitureRequestCreate(BaseModel):
     comment: str | None = None
 
 class FurnitureRequestResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     product_id: int | None
+    product_slug: str | None = None
+    category_id: int | None = None
+    category_name: str | None = None
     material_id: int | None = None
     material_name: str | None = None
     product_name: str
@@ -47,9 +52,8 @@ class FurnitureRequestResponse(BaseModel):
     updated_at: datetime
     contacted_at: datetime | None
     completed_at: datetime | None
-
-    class Config:
-        from_attributes = True
+    comments_count: int = 0
+    events_count: int = 0
 
 class FurnitureRequestStatusUpdate(BaseModel):
     status: RequestStatus
@@ -71,6 +75,8 @@ class FurnitureRequestUpdate(BaseModel):
     comment: str | None = None
 
 class RequestEventResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     request_id: int
     user_id: int
@@ -82,11 +88,14 @@ class RequestEventResponse(BaseModel):
     message: str | None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
 class FurnitureRequestDetailResponse(FurnitureRequestResponse):
     assigned_manager: UserResponse | None = None
     product: ProductDetailResponse | None = None
     comments: list[FurnitureCommentResponse] = Field(default_factory=list)
     events: list[RequestEventResponse] = Field(default_factory=list)
+
+class FurnitureRequestListResponse(BaseModel):
+    items: list[FurnitureRequestResponse] = Field(default_factory=list)
+    total: int
+    limit: int
+    offset: int

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 UserRole = Literal["admin", "manager"]
 
@@ -24,6 +24,8 @@ class UserLogin(BaseModel):
     password: str
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     login: str
     name: str
@@ -31,10 +33,9 @@ class UserResponse(BaseModel):
     role: str
     last_login_at: datetime | None = None
 
-    class Config:
-        from_attributes = True
-
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    expires_in: int
+    expires_at: datetime
     user: UserResponse

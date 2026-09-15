@@ -118,10 +118,15 @@ def serialize_request_event(event):
 def serialize_request(request):
     manager = request.assigned_manager
     material = request.material
+    product = request.product
+    category = product.category if product else None
 
     return {
         "id": request.id,
         "product_id": request.product_id,
+        "product_slug": product.slug if product else None,
+        "category_id": product.category_id if product else None,
+        "category_name": category.name if category else None,
         "material_id": request.material_id,
         "material_name": material.name if material else None,
         "product_name": request.product_name,
@@ -138,6 +143,8 @@ def serialize_request(request):
         "updated_at": request.updated_at,
         "contacted_at": request.contacted_at,
         "completed_at": request.completed_at,
+        "comments_count": len(request.comments or []),
+        "events_count": len(request.events or []),
     }
 
 

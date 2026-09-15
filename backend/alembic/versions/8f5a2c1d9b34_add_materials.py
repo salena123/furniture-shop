@@ -28,60 +28,58 @@ def upgrade() -> None:
         sa.Column(
             "created_at",
             sa.TIMESTAMP(timezone=True),
-            server_default=sa.text("now()"),
+            server_default=sa.func.now(),
             nullable=False
         ),
         sa.Column(
             "updated_at",
             sa.TIMESTAMP(timezone=True),
-            server_default=sa.text("now()"),
+            server_default=sa.func.now(),
             nullable=False
         ),
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("name")
     )
 
-    op.add_column(
-        "products",
-        sa.Column("material_id", sa.Integer(), nullable=True)
-    )
-    op.create_foreign_key(
-        "fk_products_material_id_materials",
-        "products",
-        "materials",
-        ["material_id"],
-        ["id"],
-        ondelete="SET NULL"
-    )
+    with op.batch_alter_table("products") as batch_op:
+        batch_op.add_column(
+            sa.Column("material_id", sa.Integer(), nullable=True)
+        )
+        batch_op.create_foreign_key(
+            "fk_products_material_id_materials",
+            "materials",
+            ["material_id"],
+            ["id"],
+            ondelete="SET NULL"
+        )
 
-    op.add_column(
-        "furniture_requests",
-        sa.Column("material_id", sa.Integer(), nullable=True)
-    )
-    op.create_foreign_key(
-        "fk_furniture_requests_material_id_materials",
-        "furniture_requests",
-        "materials",
-        ["material_id"],
-        ["id"],
-        ondelete="SET NULL"
-    )
+    with op.batch_alter_table("furniture_requests") as batch_op:
+        batch_op.add_column(
+            sa.Column("material_id", sa.Integer(), nullable=True)
+        )
+        batch_op.create_foreign_key(
+            "fk_furniture_requests_material_id_materials",
+            "materials",
+            ["material_id"],
+            ["id"],
+            ondelete="SET NULL"
+        )
 
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_constraint(
-        "fk_furniture_requests_material_id_materials",
-        "furniture_requests",
-        type_="foreignkey"
-    )
-    op.drop_column("furniture_requests", "material_id")
+    with op.batch_alter_table("furniture_requests") as batch_op:
+        batch_op.drop_constraint(
+            "fk_furniture_requests_material_id_materials",
+            type_="foreignkey"
+        )
+        batch_op.drop_column("material_id")
 
-    op.drop_constraint(
-        "fk_products_material_id_materials",
-        "products",
-        type_="foreignkey"
-    )
-    op.drop_column("products", "material_id")
+    with op.batch_alter_table("products") as batch_op:
+        batch_op.drop_constraint(
+            "fk_products_material_id_materials",
+            type_="foreignkey"
+        )
+        batch_op.drop_column("material_id")
 
     op.drop_table("materials")

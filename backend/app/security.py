@@ -1,14 +1,12 @@
 from __future__ import annotations
 
-import base64
 import hashlib
-import hmac
-import json
 import os
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
@@ -17,20 +15,21 @@ from app.database import get_db
 from app.models.user import User
 
 
-TOKEN_SECRET = os.getenv("SECRET_KEY") or os.getenv("JWT_SECRET_KEY") or "dev-secret-key"
+TOKEN_SECRET = (
+    os.getenv("SECRET_KEY")
+    or os.getenv("JWT_SECRET_KEY")
+    or "dev-secret-key-change-me-32-bytes-minimum"
+)
+JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
+TOKEN_EXPIRE_SECONDS = TOKEN_EXPIRE_MINUTES * 60
 PASSWORD_HASH_ITERATIONS = 120_000
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
 
-def _base64url_encode(data: bytes) -> str:
-    return base64.urlsafe_b64encode(data).decode("utf-8").rstrip("=")
-
-
-def _base64url_decode(data: str) -> bytes:
-    padding = "=" * (-len(data) % 4)
-    return base64.urlsafe_b64decode(data + padding)
+def _utc_now() -> datetime:
+    return datetime.now(timezone.utc)
 
 
 def hash_password(password: str) -> str:
@@ -62,43 +61,50 @@ def verify_password(password: str, password_hash: str) -> bool:
     return secrets.compare_digest(digest, expected_digest)
 
 
-def create_access_token(user: User) -> str:
-    expires_at = datetime.now(timezone.utc) + timedelta(minutes=TOKEN_EXPIRE_MINUTES)
+def get_access_token_expires_at(now: datetime | None = None) -> datetime:
+    now = now or _utc_now()
+    return now + timedelta(seconds=TOKEN_EXPIRE_SECONDS)
+
+
+def get_access_token_expires_in(
+    expires_at: datetime,
+    now: datetime | None = None,
+) -> int:
+    now = now or _utc_now()
+    return max(0, int((expires_at - now).total_seconds()))
+
+
+def create_access_token(
+    user: User,
+    expires_at: datetime | None = None,
+) -> str:
+    issued_at = _utc_now()
+    expires_at = expires_at or get_access_token_expires_at(issued_at)
     payload = {
         "sub": str(user.id),
         "role": user.role,
-        "exp": int(expires_at.timestamp()),
+        "type": "access",
+        "iat": issued_at,
+        "exp": expires_at,
     }
-    payload_data = _base64url_encode(
-        json.dumps(payload, separators=(",", ":")).encode("utf-8")
-    )
-    signature = hmac.new(
-        TOKEN_SECRET.encode("utf-8"),
-        payload_data.encode("utf-8"),
-        hashlib.sha256,
-    ).digest()
-    return f"{payload_data}.{_base64url_encode(signature)}"
+
+    return jwt.encode(payload, TOKEN_SECRET, algorithm=JWT_ALGORITHM)
 
 
 def decode_access_token(token: str) -> dict[str, Any]:
     try:
-        payload_data, signature = token.split(".", 1)
-    except ValueError as exc:
+        payload = jwt.decode(
+            token,
+            TOKEN_SECRET,
+            algorithms=[JWT_ALGORITHM],
+        )
+    except jwt.ExpiredSignatureError as exc:
+        raise ValueError("Срок действия токена истёк") from exc
+    except jwt.InvalidTokenError as exc:
         raise ValueError("Некорректный токен") from exc
 
-    expected_signature = hmac.new(
-        TOKEN_SECRET.encode("utf-8"),
-        payload_data.encode("utf-8"),
-        hashlib.sha256,
-    ).digest()
-
-    if not secrets.compare_digest(_base64url_encode(expected_signature), signature):
-        raise ValueError("Некорректная подпись токена")
-
-    payload = json.loads(_base64url_decode(payload_data))
-    expires_at = payload.get("exp")
-    if not expires_at or int(expires_at) < int(datetime.now(timezone.utc).timestamp()):
-        raise ValueError("Срок действия токена истёк")
+    if payload.get("type") != "access":
+        raise ValueError("Некорректный тип токена")
 
     return payload
 
@@ -111,15 +117,17 @@ def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Нужна авторизация",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     try:
         payload = decode_access_token(credentials.credentials)
         user_id = int(payload["sub"])
-    except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+    except (KeyError, TypeError, ValueError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Неверный или просроченный токен",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     user = db.query(User).filter(User.id == user_id).first()
@@ -127,6 +135,7 @@ def get_current_user(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Пользователь не найден",
+            headers={"WWW-Authenticate": "Bearer"},
         )
 
     return user

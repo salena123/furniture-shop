@@ -6,7 +6,13 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.user import User
 from app.schemas.user import TokenResponse, UserLogin, UserResponse
-from app.security import create_access_token, get_current_user, verify_password
+from app.security import (
+    create_access_token,
+    get_access_token_expires_at,
+    get_access_token_expires_in,
+    get_current_user,
+    verify_password,
+)
 
 
 router = APIRouter(
@@ -37,9 +43,13 @@ def login(
     db.commit()
     db.refresh(user)
 
+    expires_at = get_access_token_expires_at()
+
     return {
-        "access_token": create_access_token(user),
+        "access_token": create_access_token(user, expires_at=expires_at),
         "token_type": "bearer",
+        "expires_in": get_access_token_expires_in(expires_at),
+        "expires_at": expires_at,
         "user": user
     }
 

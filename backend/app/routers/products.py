@@ -21,9 +21,11 @@ from app.schemas.product import (
     ProductDetailResponse,
     ProductImageCreate,
     ProductImageResponse,
+    ProductListResponse,
     ProductUpdate,
 )
 from app.security import get_optional_current_user, require_admin
+from app.services.pagination import paginate_query
 from app.services.serializers import (
     serialize_product,
     serialize_product_attribute,
@@ -190,6 +192,22 @@ def _parse_int(value, default: int = 0) -> int:
         )
 
 
+def _delete_uploaded_image_file(image_url: str) -> None:
+    if not image_url.startswith(UPLOAD_URL_PREFIX):
+        return
+
+    relative_path = image_url.removeprefix(UPLOAD_URL_PREFIX).lstrip("/")
+    file_path = UPLOAD_ROOT / relative_path
+
+    try:
+        file_path.relative_to(UPLOAD_ROOT)
+    except ValueError:
+        return
+
+    if file_path.is_file():
+        file_path.unlink()
+
+
 @router.post(
     "/",
     response_model=ProductDetailResponse,
@@ -232,7 +250,7 @@ def create_product(
 
 @router.get(
     "/",
-    response_model=list[ProductDetailResponse],
+    response_model=ProductListResponse,
 )
 def get_products(
     category_id: int | None = None,
@@ -281,15 +299,21 @@ def get_products(
             )
         )
 
-    products = query.order_by(
+    query = query.order_by(
         Product.sort_order,
         Product.id
-    ).offset(offset).limit(limit).all()
+    )
+    products, total = paginate_query(query, limit, offset)
 
-    return [
-        serialize_product(product)
-        for product in products
-    ]
+    return {
+        "items": [
+            serialize_product(product)
+            for product in products
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
 
 
 @router.get(
@@ -679,8 +703,10 @@ def delete_image(
             detail="Фотография не найдена"
         )
 
+    image_url = image.image_url
     db.delete(image)
     db.commit()
+    _delete_uploaded_image_file(image_url)
 
     return {"message": "Фотография успешно удалена"}
 

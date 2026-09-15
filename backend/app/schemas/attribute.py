@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 class AttributeValueCreate(BaseModel):
     value: str
@@ -9,13 +9,12 @@ class AttributeValueUpdate(BaseModel):
     sort_order: int | None = None
 
 class AttributeValueResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     attribute_id: int
     value: str
     sort_order: int
-
-    class Config:
-        from_attributes = True
 
 class AttributeCreate(BaseModel):
     name: str
@@ -26,12 +25,23 @@ class AttributeUpdate(BaseModel):
     is_active: bool | None = None
 
 class AttributeResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     is_active: bool
 
-    class Config:
-        from_attributes = True
-
 class AttributeDetailResponse(AttributeResponse):
     values: list[AttributeValueResponse] = Field(default_factory=list)
+
+class AttributeListResponse(BaseModel):
+    items: list[AttributeResponse] = Field(default_factory=list)
+    total: int
+    limit: int
+    offset: int
+
+class AttributeValueListResponse(BaseModel):
+    items: list[AttributeValueResponse] = Field(default_factory=list)
+    total: int
+    limit: int
+    offset: int

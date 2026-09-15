@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 class ProductCreate(BaseModel):
     product_name: str
@@ -37,6 +37,8 @@ class ProductUpdate(BaseModel):
     meta_description: str | None = None
 
 class ProductResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     product_name: str
     slug: str
@@ -56,9 +58,6 @@ class ProductResponse(BaseModel):
     meta_title: str | None
     meta_description: str | None
 
-    class Config:
-        from_attributes = True
-
 class ProductImageCreate(BaseModel):
     image_url: str
     alt_text: str | None = None
@@ -66,6 +65,8 @@ class ProductImageCreate(BaseModel):
     is_main: bool = False
 
 class ProductImageResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     product_id: int
     image_url: str
@@ -73,19 +74,21 @@ class ProductImageResponse(BaseModel):
     sort_order: int = 0
     is_main: bool = False
 
-    class Config:
-        from_attributes = True
-
 class ProductAttributeValueResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     attribute_id: int
     attribute_name: str | None = None
     value: str
     sort_order: int
 
-    class Config:
-        from_attributes = True
-
 class ProductDetailResponse(ProductResponse):
     images: list[ProductImageResponse] = Field(default_factory=list)
     attributes: list[ProductAttributeValueResponse] = Field(default_factory=list)
+
+class ProductListResponse(BaseModel):
+    items: list[ProductDetailResponse] = Field(default_factory=list)
+    total: int
+    limit: int
+    offset: int

@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 
 class CategoryCreate(BaseModel):
     name: str
@@ -23,6 +23,8 @@ class CategoryUpdate(BaseModel):
     is_active: bool | None = None
 
 class CategoryResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     description: str | None = None
@@ -34,5 +36,8 @@ class CategoryResponse(BaseModel):
     sort_order: int
     is_active: bool
 
-    class Config:
-        from_attributes = True
+class CategoryListResponse(BaseModel):
+    items: list[CategoryResponse] = Field(default_factory=list)
+    total: int
+    limit: int
+    offset: int
