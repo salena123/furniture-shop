@@ -2,6 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.models.furniture_comment import FurnitureComment
+from app.models.furniture_request import FurnitureRequest
+from app.models.request_event import RequestEvent
 from app.models.user import User
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
 from app.security import hash_password, require_admin, require_manager_or_admin
@@ -206,9 +209,33 @@ def delete_user(
                 detail="Нельзя удалить последнего администратора"
             )
 
+    comments_count = db.query(FurnitureComment).filter(
+        FurnitureComment.user_id == user.id
+    ).count()
+    events_count = db.query(RequestEvent).filter(
+        RequestEvent.user_id == user.id
+    ).count()
+
+    if comments_count or events_count:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Пользователя нельзя удалить: "
+                f"комментариев {comments_count}, событий заявок {events_count}"
+            )
+        )
+
+    detached_requests = db.query(FurnitureRequest).filter(
+        FurnitureRequest.assigned_manager_id == user.id
+    ).update(
+        {FurnitureRequest.assigned_manager_id: None},
+        synchronize_session=False
+    )
+
     db.delete(user)
     db.commit()
 
     return {
-        "message": "Пользователь успешно удалён"
+        "message": "Пользователь успешно удалён",
+        "detached_requests": detached_requests,
     }

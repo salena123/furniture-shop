@@ -13,11 +13,13 @@ class FurnitureRequest(Base):
 
     product_id: Mapped[int | None] = mapped_column(
         ForeignKey("products.id"),
-        nullable=True
+        nullable=True,
+        index=True
     )
     material_id: Mapped[int | None] = mapped_column(
         ForeignKey("materials.id", ondelete="SET NULL"),
-        nullable=True
+        nullable=True,
+        index=True
     )
 
     product_name: Mapped[str] = mapped_column(
@@ -50,6 +52,23 @@ class FurnitureRequest(Base):
         nullable=False
     )
 
+    city: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        index=True
+    )
+
+    preferred_contact_time: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True
+    )
+
+    personal_data_consent: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default="FALSE"
+    )
+
     status: Mapped[str] = mapped_column(
         Enum(
             "new",
@@ -63,12 +82,14 @@ class FurnitureRequest(Base):
             native_enum=True
         ),
         nullable=False,
-        server_default="new"
+        server_default="new",
+        index=True
     )
 
     assigned_manager_id: Mapped[int | None] = mapped_column(
         ForeignKey("users.id"),
-        nullable=True
+        nullable=True,
+        index=True
     )
 
     comment: Mapped[str | None] = mapped_column(
@@ -79,7 +100,8 @@ class FurnitureRequest(Base):
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=False,
-        server_default=func.now()
+        server_default=func.now(),
+        index=True
     )
 
     updated_at: Mapped[datetime] = mapped_column(

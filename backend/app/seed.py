@@ -309,6 +309,9 @@ def _create_requests(db: Session) -> dict[str, int]:
             "color_name": "Белый / Дуб сонома",
             "needs_measurements": True,
             "dimensions": "кухня 3200 мм",
+            "city": "Екатеринбург",
+            "preferred_contact_time": "после 14:00",
+            "personal_data_consent": True,
             "comment": "Нужна консультация по угловой кухне",
             "status": "new",
             "assigned_manager_id": None,
@@ -320,6 +323,9 @@ def _create_requests(db: Session) -> dict[str, int]:
             "color_name": "Графит",
             "needs_measurements": False,
             "dimensions": "1800 x 600 x 2400 мм",
+            "city": "Екатеринбург",
+            "preferred_contact_time": "после 18:00",
+            "personal_data_consent": True,
             "comment": "Просит перезвонить вечером",
             "status": "in_progress",
             "assigned_manager_id": manager.id if manager else None,
@@ -336,6 +342,13 @@ def _create_requests(db: Session) -> dict[str, int]:
 
         if existing_request:
             request = existing_request
+            request.city = request.city or spec["city"]
+            request.preferred_contact_time = (
+                request.preferred_contact_time or spec["preferred_contact_time"]
+            )
+            request.personal_data_consent = (
+                request.personal_data_consent or spec["personal_data_consent"]
+            )
         else:
             request = FurnitureRequest(
                 product_id=product.id,
@@ -346,6 +359,9 @@ def _create_requests(db: Session) -> dict[str, int]:
                 dimensions=spec["dimensions"],
                 client_name=spec["client_name"],
                 phone=spec["phone"],
+                city=spec["city"],
+                preferred_contact_time=spec["preferred_contact_time"],
+                personal_data_consent=spec["personal_data_consent"],
                 status=spec["status"],
                 assigned_manager_id=spec["assigned_manager_id"],
                 comment=spec["comment"],

@@ -31,10 +31,12 @@ class Product(Base):
     category_id: Mapped[int] = mapped_column(
         ForeignKey("categories.id"),
         nullable=False,
+        index=True,
     )
     material_id: Mapped[int | None] = mapped_column(
         ForeignKey("materials.id", ondelete="SET NULL"),
         nullable=True,
+        index=True,
     )
     price: Mapped[str] = mapped_column(
         String(100),
@@ -51,7 +53,8 @@ class Product(Base):
     is_active: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
-        server_default="TRUE"
+        server_default="TRUE",
+        index=True
     )
     sort_order: Mapped[int] = mapped_column(
         Integer,

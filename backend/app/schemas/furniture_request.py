@@ -1,7 +1,14 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from app.schemas.validators import (
+    normalize_optional_text,
+    normalize_required_text,
+    validate_phone,
+    validate_true,
+)
 
 from app.schemas.furniture_comment import FurnitureCommentResponse
 from app.schemas.product import ProductDetailResponse
@@ -18,15 +25,74 @@ RequestStatus = Literal[
 ]
 
 class FurnitureRequestCreate(BaseModel):
-    product_id: int | None = None
-    material_id: int | None = None
-    product_name: str
+    model_config = ConfigDict(
+        json_schema_extra={
+            "example": {
+                "product_id": 1,
+                "material_id": 2,
+                "needs_measurements": True,
+                "dimensions": "3200 мм",
+                "client_name": "Анна",
+                "phone": "+7 900 100-20-30",
+                "city": "Екатеринбург",
+                "preferred_contact_time": "после 14:00",
+                "personal_data_consent": True,
+                "comment": "Перезвонить после обеда",
+            }
+        }
+    )
+
+    product_id: int | None = Field(default=None, gt=0)
+    material_id: int | None = Field(default=None, gt=0)
+    product_name: str | None = None
     color_name: str | None = None
     needs_measurements: bool
     dimensions: str | None = None
     client_name: str
     phone: str
+    city: str | None = None
+    preferred_contact_time: str | None = None
+    personal_data_consent: bool
     comment: str | None = None
+
+    @field_validator("client_name", mode="before")
+    @classmethod
+    def validate_required_text_fields(cls, value):
+        return normalize_required_text(value)
+
+    @field_validator("product_name", mode="before")
+    @classmethod
+    def normalize_product_name_field(cls, value):
+        return normalize_optional_text(value)
+
+    @field_validator("phone", mode="before")
+    @classmethod
+    def validate_phone_field(cls, value):
+        return validate_phone(value)
+
+    @field_validator(
+        "color_name",
+        "dimensions",
+        "city",
+        "preferred_contact_time",
+        "comment",
+        mode="before",
+    )
+    @classmethod
+    def normalize_optional_text_fields(cls, value):
+        return normalize_optional_text(value)
+
+    @field_validator("personal_data_consent")
+    @classmethod
+    def validate_personal_data_consent_field(cls, value):
+        return validate_true(value, "personal_data_consent")
+
+    @model_validator(mode="after")
+    def validate_product_reference(self):
+        if self.product_id is None and self.product_name is None:
+            raise ValueError("Нужно выбрать товар или указать название товара")
+
+        return self
 
 class FurnitureRequestResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -44,6 +110,9 @@ class FurnitureRequestResponse(BaseModel):
     dimensions: str | None
     client_name: str
     phone: str
+    city: str | None = None
+    preferred_contact_time: str | None = None
+    personal_data_consent: bool
     status: str
     assigned_manager_id: int | None
     assigned_manager_name: str | None = None
@@ -59,20 +128,56 @@ class FurnitureRequestStatusUpdate(BaseModel):
     status: RequestStatus
 
 class FurnitureRequestManagerUpdate(BaseModel):
-    assigned_manager_id: int | None
+    assigned_manager_id: int | None = Field(default=None, gt=0)
 
 class FurnitureRequestUpdate(BaseModel):
-    product_id: int | None = None
-    material_id: int | None = None
+    product_id: int | None = Field(default=None, gt=0)
+    material_id: int | None = Field(default=None, gt=0)
     product_name: str | None = None
     color_name: str | None = None
     needs_measurements: bool | None = None
     dimensions: str | None = None
     client_name: str | None = None
     phone: str | None = None
+    city: str | None = None
+    preferred_contact_time: str | None = None
+    personal_data_consent: bool | None = None
     status: RequestStatus | None = None
-    assigned_manager_id: int | None = None
+    assigned_manager_id: int | None = Field(default=None, gt=0)
     comment: str | None = None
+
+    @field_validator("product_name", "client_name", "phone", mode="before")
+    @classmethod
+    def validate_required_text_fields(cls, value):
+        if value is None:
+            return value
+        return normalize_required_text(value)
+
+    @field_validator("phone", mode="after")
+    @classmethod
+    def validate_phone_field(cls, value):
+        if value is None:
+            return value
+        return validate_phone(value)
+
+    @field_validator(
+        "color_name",
+        "dimensions",
+        "city",
+        "preferred_contact_time",
+        "comment",
+        mode="before",
+    )
+    @classmethod
+    def normalize_optional_text_fields(cls, value):
+        return normalize_optional_text(value)
+
+    @field_validator("personal_data_consent")
+    @classmethod
+    def validate_personal_data_consent_field(cls, value):
+        if value is None:
+            return value
+        return validate_true(value, "personal_data_consent")
 
 class RequestEventResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)

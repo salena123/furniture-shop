@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.attribute import Attribute
 from app.models.attribute_value import AttributeValue
+from app.models.product_attribute import ProductAttribute
 from app.models.user import User
 from app.schemas.attribute import (
     AttributeCreate,
@@ -227,6 +228,18 @@ def delete_attribute(
     _current_user: User = Depends(require_admin)
 ):
     attribute = _get_attribute_or_404(attribute_id, db)
+    used_values_count = db.query(ProductAttribute).join(AttributeValue).filter(
+        AttributeValue.attribute_id == attribute.id
+    ).count()
+
+    if used_values_count:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Атрибут нельзя удалить: "
+                f"его значения используются у товаров ({used_values_count})"
+            )
+        )
 
     db.delete(attribute)
     db.commit()
@@ -359,6 +372,18 @@ def delete_attribute_value(
     _current_user: User = Depends(require_admin)
 ):
     value = _get_attribute_value_or_404(value_id, db)
+    products_count = db.query(ProductAttribute).filter(
+        ProductAttribute.attribute_value_id == value.id
+    ).count()
+
+    if products_count:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Значение атрибута нельзя удалить: "
+                f"оно используется у товаров ({products_count})"
+            )
+        )
 
     db.delete(value)
     db.commit()

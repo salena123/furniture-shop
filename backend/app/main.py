@@ -1,11 +1,15 @@
 import os
 from pathlib import Path
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 from sqlalchemy.orm import Session
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.database import get_db
 from app.models import *
 from app.routers.furniture_requests import router as furniture_requests_router
@@ -21,6 +25,62 @@ from app.routers.materials import router as materials_router
 from app.routers.catalog import router as catalog_router
 
 app = FastAPI()
+
+
+ERROR_CODES = {
+    400: "bad_request",
+    401: "unauthorized",
+    403: "forbidden",
+    404: "not_found",
+    409: "conflict",
+    422: "validation_error",
+}
+
+
+def _get_error_message(detail) -> str:
+    if isinstance(detail, str):
+        return detail
+
+    if isinstance(detail, dict):
+        return str(detail.get("message") or detail.get("detail") or "Ошибка запроса")
+
+    if isinstance(detail, list):
+        return "Ошибка валидации данных"
+
+    return "Ошибка запроса"
+
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(
+    _request: Request,
+    exc: StarletteHTTPException,
+):
+    content = {
+        "error": ERROR_CODES.get(exc.status_code, "http_error"),
+        "message": _get_error_message(exc.detail),
+        "detail": exc.detail,
+    }
+    return JSONResponse(
+        status_code=exc.status_code,
+        content=jsonable_encoder(content),
+        headers=getattr(exc, "headers", None),
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(
+    _request: Request,
+    exc: RequestValidationError,
+):
+    content = {
+        "error": "validation_error",
+        "message": "Ошибка валидации данных",
+        "detail": exc.errors(),
+    }
+    return JSONResponse(
+        status_code=422,
+        content=jsonable_encoder(content),
+    )
 
 cors_origins = os.getenv(
     "CORS_ORIGINS",

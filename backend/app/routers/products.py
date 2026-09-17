@@ -1,3 +1,5 @@
+import os
+from datetime import datetime, timezone
 from pathlib import Path
 from uuid import uuid4
 
@@ -40,6 +42,7 @@ router = APIRouter(
 
 UPLOAD_ROOT = Path(__file__).resolve().parents[2] / "static" / "uploads" / "products"
 UPLOAD_URL_PREFIX = "/static/uploads/products"
+MAX_IMAGE_SIZE_BYTES = int(os.getenv("MAX_IMAGE_SIZE_BYTES", str(5 * 1024 * 1024)))
 ALLOWED_IMAGE_TYPES = {
     "image/jpeg": ".jpg",
     "image/png": ".png",
@@ -136,14 +139,14 @@ def _ensure_product_slug_is_free(
         )
 
 
-def _ensure_main_image_is_free(
+def _unset_main_images(
     product_id: int,
     db: Session,
     current_image_id: int | None = None,
 ) -> None:
     query = db.query(ProductImage).filter(
         ProductImage.product_id == product_id,
-        ProductImage.is_main == True
+        ProductImage.is_main == True,
     )
 
     if current_image_id is not None:
@@ -151,11 +154,53 @@ def _ensure_main_image_is_free(
             ProductImage.id != current_image_id
         )
 
-    if query.first():
-        raise HTTPException(
-            status_code=400,
-            detail="У товара уже есть главная фотография"
+    query.update(
+        {ProductImage.is_main: False},
+        synchronize_session=False
+    )
+
+
+def _product_has_images(product_id: int, db: Session) -> bool:
+    return db.query(ProductImage.id).filter(
+        ProductImage.product_id == product_id
+    ).first() is not None
+
+
+def _ensure_product_has_main_image(
+    product_id: int,
+    db: Session,
+    excluded_image_id: int | None = None,
+) -> None:
+    has_main = db.query(ProductImage.id).filter(
+        ProductImage.product_id == product_id,
+        ProductImage.is_main == True,
+    ).first()
+
+    if has_main:
+        return
+
+    query = db.query(ProductImage).filter(
+        ProductImage.product_id == product_id,
+    )
+
+    if excluded_image_id is not None:
+        query = query.filter(
+            ProductImage.id != excluded_image_id
         )
+
+    replacement = query.order_by(
+        ProductImage.sort_order,
+        ProductImage.id
+    ).first()
+
+    if replacement is None and excluded_image_id is not None:
+        replacement = db.query(ProductImage).filter(
+            ProductImage.product_id == product_id,
+            ProductImage.id == excluded_image_id,
+        ).first()
+
+    if replacement:
+        replacement.is_main = True
 
 
 def _commit_product_changes(db: Session) -> None:
@@ -184,12 +229,20 @@ def _parse_int(value, default: int = 0) -> int:
         return default
 
     try:
-        return int(value)
+        parsed_value = int(value)
     except ValueError:
         raise HTTPException(
             status_code=400,
             detail="sort_order должен быть числом"
         )
+
+    if parsed_value < 0:
+        raise HTTPException(
+            status_code=400,
+            detail="sort_order не может быть отрицательным"
+        )
+
+    return parsed_value
 
 
 def _delete_uploaded_image_file(image_url: str) -> None:
@@ -471,10 +524,16 @@ def delete_product(
 ):
     product = _get_product_or_404(product_id, db)
 
-    db.delete(product)
+    product.is_active = False
+    product.updated_at = datetime.now(timezone.utc)
     db.commit()
+    db.refresh(product)
 
-    return {"message": "Товар успешно удалён"}
+    return {
+        "message": "Товар скрыт с сайта",
+        "product_id": product.id,
+        "is_active": product.is_active,
+    }
 
 
 @router.post(
@@ -489,15 +548,16 @@ def add_product_image_to_product(
 ):
     product = _get_product_or_404(product_id, db)
 
-    if image.is_main:
-        _ensure_main_image_is_free(product.id, db)
+    is_main = image.is_main or not _product_has_images(product.id, db)
+    if is_main:
+        _unset_main_images(product.id, db)
 
     new_image = ProductImage(
         product_id=product.id,
         image_url=image.image_url,
         alt_text=image.alt_text,
         sort_order=image.sort_order,
-        is_main=image.is_main,
+        is_main=is_main,
     )
 
     db.add(new_image)
@@ -573,9 +633,8 @@ async def upload_product_image(
     is_main = _parse_bool(form.get("is_main"))
     sort_order = _parse_int(form.get("sort_order"), default=0)
     alt_text = form.get("alt_text")
-
-    if is_main:
-        _ensure_main_image_is_free(product.id, db)
+    alt_text = alt_text.strip() if isinstance(alt_text, str) else alt_text
+    alt_text = alt_text or None
 
     file_bytes = await upload.read()
     if not file_bytes:
@@ -583,6 +642,17 @@ async def upload_product_image(
             status_code=400,
             detail="Файл пустой"
         )
+
+    if len(file_bytes) > MAX_IMAGE_SIZE_BYTES:
+        max_size_mb = MAX_IMAGE_SIZE_BYTES // (1024 * 1024)
+        raise HTTPException(
+            status_code=400,
+            detail=f"Размер файла не должен превышать {max_size_mb} МБ"
+        )
+
+    is_main = is_main or not _product_has_images(product.id, db)
+    if is_main:
+        _unset_main_images(product.id, db)
 
     extension = ALLOWED_IMAGE_TYPES[upload.content_type]
     file_name = f"{uuid4().hex}{extension}"
@@ -668,7 +738,7 @@ def update_info_product_image(
         )
 
     if image_data.is_main:
-        _ensure_main_image_is_free(
+        _unset_main_images(
             image.product_id,
             db,
             current_image_id=image.id,
@@ -678,6 +748,12 @@ def update_info_product_image(
     image.alt_text = image_data.alt_text
     image.sort_order = image_data.sort_order
     image.is_main = image_data.is_main
+    if not image.is_main:
+        _ensure_product_has_main_image(
+            image.product_id,
+            db,
+            excluded_image_id=image.id
+        )
 
     db.commit()
     db.refresh(image)
@@ -704,7 +780,16 @@ def delete_image(
         )
 
     image_url = image.image_url
+    image_was_main = image.is_main
+    product_id = image.product_id
     db.delete(image)
+    db.flush()
+    if image_was_main:
+        _ensure_product_has_main_image(
+            product_id,
+            db,
+            excluded_image_id=image.id
+        )
     db.commit()
     _delete_uploaded_image_file(image_url)
 

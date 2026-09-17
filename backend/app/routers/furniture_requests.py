@@ -250,15 +250,21 @@ def create_request(
     elif product and product.material_id is not None:
         material_id = product.material_id
 
+    product_name = product.product_name if product else request.product_name
+    color_name = request.color_name or (product.color if product else None)
+
     new_request = FurnitureRequest(
         product_id=request.product_id,
         material_id=material_id,
-        product_name=request.product_name,
-        color_name=request.color_name,
+        product_name=product_name,
+        color_name=color_name,
         needs_measurements=request.needs_measurements,
         dimensions=request.dimensions,
         client_name=request.client_name,
         phone=request.phone,
+        city=request.city,
+        preferred_contact_time=request.preferred_contact_time,
+        personal_data_consent=request.personal_data_consent,
         status="new",
         comment=request.comment
     )
@@ -280,6 +286,7 @@ def get_requests(
     product_id: int | None = None,
     material_id: int | None = None,
     phone: str | None = None,
+    city: str | None = None,
     search: str | None = None,
     limit: int = Query(20, ge=1, le=100),
     offset: int = Query(0, ge=0),
@@ -317,6 +324,11 @@ def get_requests(
             FurnitureRequest.phone.ilike(f"%{phone}%")
         )
 
+    if city:
+        query = query.filter(
+            FurnitureRequest.city.ilike(f"%{city}%")
+        )
+
     if search:
         search_filter = f"%{search}%"
         query = query.filter(
@@ -325,6 +337,8 @@ def get_requests(
                 FurnitureRequest.material.has(Material.name.ilike(search_filter)),
                 FurnitureRequest.client_name.ilike(search_filter),
                 FurnitureRequest.phone.ilike(search_filter),
+                FurnitureRequest.city.ilike(search_filter),
+                FurnitureRequest.preferred_contact_time.ilike(search_filter),
                 FurnitureRequest.comment.ilike(search_filter),
             )
         )
@@ -434,7 +448,13 @@ def patch_request(
     request = _get_request_or_404(request_id, db)
     update_data = request_data.model_dump(exclude_unset=True)
 
-    for field in {"product_name", "needs_measurements", "client_name", "phone"}:
+    for field in {
+        "product_name",
+        "needs_measurements",
+        "client_name",
+        "phone",
+        "personal_data_consent",
+    }:
         if field in update_data and update_data[field] is None:
             raise HTTPException(
                 status_code=400,
@@ -442,7 +462,12 @@ def patch_request(
             )
 
     if "product_id" in update_data and update_data["product_id"] is not None:
-        _get_product_or_404(update_data["product_id"], db)
+        product = _get_product_or_404(update_data["product_id"], db)
+        update_data["product_name"] = product.product_name
+        if "material_id" not in update_data and product.material_id is not None:
+            update_data["material_id"] = product.material_id
+        if "color_name" not in update_data and product.color is not None:
+            update_data["color_name"] = product.color
 
     if "material_id" in update_data and update_data["material_id"] is not None:
         _get_material_or_404(update_data["material_id"], db)

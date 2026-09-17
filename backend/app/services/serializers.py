@@ -120,6 +120,8 @@ def serialize_request(request):
     material = request.material
     product = request.product
     category = product.category if product else None
+    product_name = product.product_name if product else request.product_name
+    color_name = request.color_name or (product.color if product else None)
 
     return {
         "id": request.id,
@@ -129,12 +131,15 @@ def serialize_request(request):
         "category_name": category.name if category else None,
         "material_id": request.material_id,
         "material_name": material.name if material else None,
-        "product_name": request.product_name,
-        "color_name": request.color_name,
+        "product_name": product_name,
+        "color_name": color_name,
         "needs_measurements": request.needs_measurements,
         "dimensions": request.dimensions,
         "client_name": request.client_name,
         "phone": request.phone,
+        "city": request.city,
+        "preferred_contact_time": request.preferred_contact_time,
+        "personal_data_consent": request.personal_data_consent,
         "status": request.status,
         "assigned_manager_id": request.assigned_manager_id,
         "assigned_manager_name": manager.name if manager else None,

@@ -209,13 +209,13 @@ def delete_material(
 ):
     material = _get_material_or_404(material_id, db)
 
-    db.query(Product).filter(
+    updated_products = db.query(Product).filter(
         Product.material_id == material.id
     ).update(
         {Product.material_id: None},
         synchronize_session=False
     )
-    db.query(FurnitureRequest).filter(
+    updated_requests = db.query(FurnitureRequest).filter(
         FurnitureRequest.material_id == material.id
     ).update(
         {FurnitureRequest.material_id: None},
@@ -226,5 +226,7 @@ def delete_material(
     db.commit()
 
     return {
-        "message": "Материал успешно удалён"
+        "message": "Материал успешно удалён",
+        "updated_products": updated_products,
+        "updated_requests": updated_requests,
     }

@@ -41,15 +41,21 @@ def _login(client, login: str, password: str) -> dict:
     return response.json()
 
 
-def _create_manager(client, admin_token: str) -> dict:
+def _create_manager(
+    client,
+    admin_token: str,
+    login: str = "manager",
+    name: str = "Manager",
+    password: str = "manager12345",
+) -> dict:
     response = client.post(
         "/api/users/",
         headers=_auth_headers(admin_token),
         json={
-            "login": "manager",
-            "name": "Manager",
-            "email": "manager@example.com",
-            "password": "manager12345",
+            "login": login,
+            "name": name,
+            "email": f"{login}@example.com",
+            "password": password,
             "role": "manager",
         },
     )
@@ -127,13 +133,42 @@ def _create_public_request(client, product: dict, material: dict) -> dict:
         json={
             "product_id": product["id"],
             "material_id": material["id"],
-            "product_name": product["product_name"],
-            "color_name": "Белый",
             "needs_measurements": True,
             "dimensions": "3000 мм",
             "client_name": "Анна",
             "phone": "+7 900 100-20-30",
+            "city": "Екатеринбург",
+            "preferred_contact_time": "после 14:00",
+            "personal_data_consent": True,
             "comment": "Перезвонить после обеда",
+        },
+    )
+
+    assert response.status_code == 200
+    return response.json()
+
+
+def _create_attribute(client, admin_token: str) -> dict:
+    response = client.post(
+        "/api/attributes/",
+        headers=_auth_headers(admin_token),
+        json={
+            "name": "Цвет",
+            "is_active": True,
+        },
+    )
+
+    assert response.status_code == 200
+    return response.json()
+
+
+def _create_attribute_value(client, admin_token: str, attribute_id: int) -> dict:
+    response = client.post(
+        f"/api/attributes/{attribute_id}/values",
+        headers=_auth_headers(admin_token),
+        json={
+            "value": "Белый",
+            "sort_order": 10,
         },
     )
 
@@ -221,7 +256,11 @@ def test_public_request_and_manager_processing_flow(client):
 
     request = _create_public_request(client, product, material)
     assert request["status"] == "new"
+    assert request["product_name"] == product["product_name"]
+    assert request["color_name"] == product["color"]
     assert request["material_name"] == material["name"]
+    assert request["city"] == "Екатеринбург"
+    assert request["personal_data_consent"] is True
 
     unauthorized_response = client.get("/api/requests/")
     assert unauthorized_response.status_code == 401
@@ -292,3 +331,194 @@ def test_catalog_lists_return_pagination_meta(client):
     assert materials_payload["limit"] == 1
     assert materials_payload["offset"] == 0
     assert len(materials_payload["items"]) == 1
+
+
+def test_validation_rejects_invalid_payloads(client):
+    _create_admin(client)
+    admin_token = _login(client, "admin", "admin12345")["access_token"]
+    category = _create_category(client, admin_token)
+    material = _create_material(client, admin_token)
+
+    invalid_phone_response = client.post(
+        "/api/requests/",
+        json={
+            "product_name": "Кухня",
+            "needs_measurements": True,
+            "client_name": "Анна",
+            "phone": "not-a-phone",
+        },
+    )
+    assert invalid_phone_response.status_code == 422
+
+    blank_material_response = client.post(
+        "/api/materials/",
+        headers=_auth_headers(admin_token),
+        json={
+            "name": "   ",
+            "description": "Описание",
+        },
+    )
+    assert blank_material_response.status_code == 422
+
+    invalid_slug_response = client.post(
+        "/api/products/",
+        headers=_auth_headers(admin_token),
+        json={
+            "product_name": "Кухня",
+            "slug": "bad slug",
+            "category_id": category["id"],
+            "material_id": material["id"],
+            "price": "от 50 000 ₽",
+            "is_custom": True,
+        },
+    )
+    assert invalid_slug_response.status_code == 422
+
+    missing_product_response = client.post(
+        "/api/requests/",
+        json={
+            "needs_measurements": True,
+            "client_name": "Анна",
+            "phone": "+7 900 100-20-30",
+            "personal_data_consent": True,
+        },
+    )
+    assert missing_product_response.status_code == 422
+
+
+def test_safe_deletion_preserves_request_history(client):
+    _create_admin(client)
+    admin_token = _login(client, "admin", "admin12345")["access_token"]
+    category = _create_category(client, admin_token)
+    material = _create_material(client, admin_token)
+    product = _create_product(client, admin_token, category["id"], material["id"])
+    request = _create_public_request(client, product, material)
+
+    category_delete_response = client.delete(
+        f"/api/categories/{category['id']}",
+        headers=_auth_headers(admin_token),
+    )
+    assert category_delete_response.status_code == 400
+
+    material_delete_response = client.delete(
+        f"/api/materials/{material['id']}",
+        headers=_auth_headers(admin_token),
+    )
+    assert material_delete_response.status_code == 200
+    assert material_delete_response.json()["updated_products"] == 1
+    assert material_delete_response.json()["updated_requests"] == 1
+
+    product_delete_response = client.delete(
+        f"/api/products/{product['id']}",
+        headers=_auth_headers(admin_token),
+    )
+    assert product_delete_response.status_code == 200
+    assert product_delete_response.json()["is_active"] is False
+
+    request_response = client.get(
+        f"/api/requests/{request['id']}",
+        headers=_auth_headers(admin_token),
+    )
+    request_payload = request_response.json()
+
+    assert request_response.status_code == 200
+    assert request_payload["product_id"] == product["id"]
+    assert request_payload["material_id"] is None
+    assert request_payload["product_name"] == product["product_name"]
+
+
+def test_attribute_delete_is_blocked_while_used_by_product(client):
+    _create_admin(client)
+    admin_token = _login(client, "admin", "admin12345")["access_token"]
+    category = _create_category(client, admin_token)
+    material = _create_material(client, admin_token)
+    product = _create_product(client, admin_token, category["id"], material["id"])
+    attribute = _create_attribute(client, admin_token)
+    value = _create_attribute_value(client, admin_token, attribute["id"])
+
+    link_response = client.post(
+        f"/api/products/{product['id']}/attributes/{value['id']}",
+        headers=_auth_headers(admin_token),
+    )
+    assert link_response.status_code == 200
+
+    value_delete_response = client.delete(
+        f"/api/attributes/values/{value['id']}",
+        headers=_auth_headers(admin_token),
+    )
+    assert value_delete_response.status_code == 400
+
+    attribute_delete_response = client.delete(
+        f"/api/attributes/{attribute['id']}",
+        headers=_auth_headers(admin_token),
+    )
+    assert attribute_delete_response.status_code == 400
+
+    unlink_response = client.delete(
+        f"/api/products/{product['id']}/attributes/{value['id']}",
+        headers=_auth_headers(admin_token),
+    )
+    assert unlink_response.status_code == 200
+
+    value_delete_response = client.delete(
+        f"/api/attributes/values/{value['id']}",
+        headers=_auth_headers(admin_token),
+    )
+    assert value_delete_response.status_code == 200
+
+    attribute_delete_response = client.delete(
+        f"/api/attributes/{attribute['id']}",
+        headers=_auth_headers(admin_token),
+    )
+    assert attribute_delete_response.status_code == 200
+
+
+def test_user_delete_detaches_requests_but_blocks_history_authors(client):
+    _create_admin(client)
+    admin_token = _login(client, "admin", "admin12345")["access_token"]
+    manager = _create_manager(client, admin_token)
+    second_manager = _create_manager(
+        client,
+        admin_token,
+        login="manager2",
+        name="Second Manager",
+        password="manager2345",
+    )
+    second_manager_token = _login(client, "manager2", "manager2345")["access_token"]
+    category = _create_category(client, admin_token)
+    material = _create_material(client, admin_token)
+    product = _create_product(client, admin_token, category["id"], material["id"])
+    request = _create_public_request(client, product, material)
+
+    assign_response = client.patch(
+        f"/api/requests/{request['id']}/manager",
+        headers=_auth_headers(admin_token),
+        json={"assigned_manager_id": manager["id"]},
+    )
+    assert assign_response.status_code == 200
+
+    delete_manager_response = client.delete(
+        f"/api/users/{manager['id']}",
+        headers=_auth_headers(admin_token),
+    )
+    assert delete_manager_response.status_code == 200
+    assert delete_manager_response.json()["detached_requests"] == 1
+
+    request_response = client.get(
+        f"/api/requests/{request['id']}",
+        headers=_auth_headers(admin_token),
+    )
+    assert request_response.json()["assigned_manager_id"] is None
+
+    comment_response = client.post(
+        f"/api/requests/{request['id']}/comments",
+        headers=_auth_headers(second_manager_token),
+        json={"comment_text": "Перезвонить завтра"},
+    )
+    assert comment_response.status_code == 200
+
+    delete_second_manager_response = client.delete(
+        f"/api/users/{second_manager['id']}",
+        headers=_auth_headers(admin_token),
+    )
+    assert delete_second_manager_response.status_code == 400

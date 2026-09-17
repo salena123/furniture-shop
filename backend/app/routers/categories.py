@@ -3,6 +3,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.category import Category
+from app.models.product import Product
 from app.models.user import User
 from app.schemas.category import (
     CategoryCreate,
@@ -297,6 +298,21 @@ def delete_category(
     _current_user: User = Depends(require_admin)
 ):
     category = _get_category_or_404(category_id, db)
+    children_count = db.query(Category).filter(
+        Category.parent_id == category.id
+    ).count()
+    products_count = db.query(Product).filter(
+        Product.category_id == category.id
+    ).count()
+
+    if children_count or products_count:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Категорию нельзя удалить: "
+                f"подкатегорий {children_count}, товаров {products_count}"
+            )
+        )
 
     db.delete(category)
     db.commit()
