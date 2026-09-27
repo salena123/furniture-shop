@@ -6,6 +6,7 @@ from app.models.attribute import Attribute
 from app.models.category import Category
 from app.models.material import Material
 from app.schemas.catalog import CatalogOptionsResponse
+from app.services.category_tree import visible_category_ids
 
 
 router = APIRouter(
@@ -22,7 +23,7 @@ def get_catalog_options(
     db: Session = Depends(get_db)
 ):
     categories = db.query(Category).filter(
-        Category.is_active == True
+        Category.id.in_(visible_category_ids(db))
     ).order_by(
         Category.sort_order,
         Category.id

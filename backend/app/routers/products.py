@@ -28,6 +28,7 @@ from app.schemas.product import (
 )
 from app.security import get_optional_current_user, require_admin
 from app.services.pagination import paginate_query
+from app.services.category_tree import descendant_category_ids, visible_category_ids
 from app.services.serializers import (
     serialize_product,
     serialize_product_attribute,
@@ -81,7 +82,8 @@ def _get_product_or_404(
 
     if not include_inactive:
         query = query.filter(
-            Product.is_active == True
+            Product.is_active == True,
+            Product.category_id.in_(visible_category_ids(db)),
         )
 
     product = query.first()
@@ -246,14 +248,14 @@ def _parse_int(value, default: int = 0) -> int:
 
 
 def _delete_uploaded_image_file(image_url: str) -> None:
-    if not image_url.startswith(UPLOAD_URL_PREFIX):
+    if not image_url.startswith(UPLOAD_URL_PREFIX + "/"):
         return
 
     relative_path = image_url.removeprefix(UPLOAD_URL_PREFIX).lstrip("/")
-    file_path = UPLOAD_ROOT / relative_path
+    file_path = (UPLOAD_ROOT / relative_path).resolve()
 
     try:
-        file_path.relative_to(UPLOAD_ROOT)
+        file_path.relative_to(UPLOAD_ROOT.resolve())
     except ValueError:
         return
 
@@ -307,6 +309,7 @@ def create_product(
 )
 def get_products(
     category_id: int | None = None,
+    include_descendants: bool = False,
     material_id: int | None = None,
     search: str | None = None,
     include_inactive: bool = False,
@@ -325,12 +328,14 @@ def get_products(
 
     if not include_inactive:
         query = query.filter(
-            Product.is_active == True
+            Product.is_active == True,
+            Product.category_id.in_(visible_category_ids(db)),
         )
 
     if category_id is not None:
         query = query.filter(
-            Product.category_id == category_id
+            Product.category_id.in_(descendant_category_ids(category_id, db))
+            if include_descendants else Product.category_id == category_id
         )
 
     if material_id is not None:
@@ -391,7 +396,8 @@ def get_product_by_slug(
 
     if not include_inactive:
         query = query.filter(
-            Product.is_active == True
+            Product.is_active == True,
+            Product.category_id.in_(visible_category_ids(db)),
         )
 
     product = query.first()

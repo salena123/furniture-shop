@@ -1,0 +1,389 @@
+{
+  "name": "02 / Каталог",
+  "width": 1440,
+  "children": [
+    {
+      "type": "instance",
+      "ref": "publicHeader",
+      "labels": {},
+      "width": 1440
+    },
+    {
+      "type": "frame",
+      "name": "Каталог / Основная область",
+      "dir": "HORIZONTAL",
+      "width": 1440,
+      "padX": 64,
+      "padY": 32,
+      "gap": 32,
+      "align": "MIN",
+      "fill": "white",
+      "children": [
+        {
+          "type": "frame",
+          "name": "Навигация по категориям",
+          "dir": "VERTICAL",
+          "width": 224,
+          "padding": 16,
+          "gap": 8,
+          "fill": "bg",
+          "radius": 8,
+          "children": [
+            {
+              "type": "text",
+              "text": "Каталог мебели",
+              "size": 20,
+              "weight": "SemiBold",
+              "color": "ink",
+              "width": 192
+            },
+            {
+              "type": "frame",
+              "name": "Отступ",
+              "dir": "HORIZONTAL",
+              "width": 192,
+              "height": 8,
+              "children": []
+            },
+            {
+              "type": "frame",
+              "name": "Кухни / Раскрытая категория",
+              "dir": "HORIZONTAL",
+              "width": 192,
+              "height": 40,
+              "align": "CENTER",
+              "justify": "SPACE_BETWEEN",
+              "children": [
+                {
+                  "type": "text",
+                  "text": "Кухни",
+                  "size": 16,
+                  "weight": "SemiBold",
+                  "color": "green"
+                },
+                {
+                  "type": "text",
+                  "text": "⌃",
+                  "size": 20,
+                  "weight": "Regular",
+                  "color": "green"
+                }
+              ]
+            },
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "Все кухни"
+              },
+              "width": 192,
+              "height": 40
+            },
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "Прямые"
+              },
+              "width": 192,
+              "height": 40
+            },
+            {
+              "type": "instance",
+              "ref": "button:selected",
+              "labels": {
+                "Label": "Угловые"
+              },
+              "width": 192,
+              "height": 40
+            },
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "П-образные"
+              },
+              "width": 192,
+              "height": 40
+            },
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "С островом"
+              },
+              "width": 192,
+              "height": 40
+            },
+            {
+              "type": "frame",
+              "name": "Шкафы / Категория",
+              "dir": "HORIZONTAL",
+              "width": 192,
+              "height": 48,
+              "align": "CENTER",
+              "justify": "SPACE_BETWEEN",
+              "children": [
+                {
+                  "type": "text",
+                  "text": "Шкафы",
+                  "size": 16,
+                  "weight": "Medium",
+                  "color": "ink"
+                },
+                {
+                  "type": "text",
+                  "text": "⌄",
+                  "size": 20,
+                  "weight": "Regular",
+                  "color": "ink"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "Гардеробные / Категория",
+              "dir": "HORIZONTAL",
+              "width": 192,
+              "height": 48,
+              "align": "CENTER",
+              "justify": "SPACE_BETWEEN",
+              "children": [
+                {
+                  "type": "text",
+                  "text": "Гардеробные",
+                  "size": 16,
+                  "weight": "Medium",
+                  "color": "ink"
+                },
+                {
+                  "type": "text",
+                  "text": "⌄",
+                  "size": 20,
+                  "weight": "Regular",
+                  "color": "ink"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "Гостиные / Категория",
+              "dir": "HORIZONTAL",
+              "width": 192,
+              "height": 48,
+              "align": "CENTER",
+              "justify": "SPACE_BETWEEN",
+              "children": [
+                {
+                  "type": "text",
+                  "text": "Гостиные",
+                  "size": 16,
+                  "weight": "Medium",
+                  "color": "ink"
+                },
+                {
+                  "type": "text",
+                  "text": "⌄",
+                  "size": 20,
+                  "weight": "Regular",
+                  "color": "ink"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "Прихожие / Категория",
+              "dir": "HORIZONTAL",
+              "width": 192,
+              "height": 48,
+              "align": "CENTER",
+              "justify": "SPACE_BETWEEN",
+              "children": [
+                {
+                  "type": "text",
+                  "text": "Прихожие",
+                  "size": 16,
+                  "weight": "Medium",
+                  "color": "ink"
+                },
+                {
+                  "type": "text",
+                  "text": "⌄",
+                  "size": 20,
+                  "weight": "Regular",
+                  "color": "ink"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "name": "Каталог / Список выполненных работ",
+          "dir": "VERTICAL",
+          "width": 1056,
+          "gap": 24,
+          "children": [
+            {
+              "type": "frame",
+              "name": "Заголовок категории",
+              "dir": "VERTICAL",
+              "width": 1056,
+              "gap": 12,
+              "children": [
+                {
+                  "type": "text",
+                  "name": "Хлебные крошки",
+                  "text": "Главная   /   Каталог   /   Кухни   /   Угловые",
+                  "size": 14,
+                  "weight": "Regular",
+                  "color": "muted",
+                  "width": 1056
+                },
+                {
+                  "type": "text",
+                  "text": "Угловые кухни",
+                  "size": 40,
+                  "weight": "Bold",
+                  "color": "ink",
+                  "width": 1056
+                },
+                {
+                  "type": "text",
+                  "text": "Выполненные проекты для вашего вдохновения",
+                  "size": 16,
+                  "weight": "Regular",
+                  "color": "muted",
+                  "width": 1056
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "Фильтры и сортировка",
+              "dir": "HORIZONTAL",
+              "width": 1056,
+              "height": 44,
+              "align": "CENTER",
+              "justify": "SPACE_BETWEEN",
+              "children": [
+                {
+                  "type": "text",
+                  "text": "4 работы",
+                  "size": 16,
+                  "weight": "Medium",
+                  "color": "muted",
+                  "width": 340
+                },
+                {
+                  "type": "frame",
+                  "name": "Фильтры",
+                  "dir": "HORIZONTAL",
+                  "width": 632,
+                  "gap": 16,
+                  "align": "CENTER",
+                  "children": [
+                    {
+                      "type": "instance",
+                      "ref": "field",
+                      "labels": {
+                        "Label": "Все материалы  ⌄"
+                      },
+                      "width": 200,
+                      "height": 44
+                    },
+                    {
+                      "type": "instance",
+                      "ref": "field",
+                      "labels": {
+                        "Label": "Все стили  ⌄"
+                      },
+                      "width": 192,
+                      "height": 44
+                    },
+                    {
+                      "type": "instance",
+                      "ref": "field",
+                      "labels": {
+                        "Label": "Сначала новые  ⌄"
+                      },
+                      "width": 208,
+                      "height": 44
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "Работы / Ряд 1",
+              "dir": "HORIZONTAL",
+              "width": 1056,
+              "gap": 24,
+              "children": [
+                {
+                  "type": "instance",
+                  "ref": "product",
+                  "photo": 0,
+                  "labels": {
+                    "Title": "Кухня «Гранат»",
+                    "Subtitle": "Эмаль · Современный стиль"
+                  },
+                  "width": 516
+                },
+                {
+                  "type": "instance",
+                  "ref": "product",
+                  "photo": 1,
+                  "labels": {
+                    "Title": "Кухня «Тёплый дуб»",
+                    "Subtitle": "МДФ и шпон · Современный стиль"
+                  },
+                  "width": 516
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "Работы / Ряд 2",
+              "dir": "HORIZONTAL",
+              "width": 1056,
+              "gap": 24,
+              "children": [
+                {
+                  "type": "instance",
+                  "ref": "product",
+                  "photo": 2,
+                  "labels": {
+                    "Title": "Кухня «Шалфей»",
+                    "Subtitle": "Эмаль · Неоклассика"
+                  },
+                  "width": 516
+                },
+                {
+                  "type": "instance",
+                  "ref": "product",
+                  "photo": 3,
+                  "labels": {
+                    "Title": "Кухня «Лён»",
+                    "Subtitle": "МДФ · Минимализм"
+                  },
+                  "width": 516
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "instance",
+      "ref": "publicFooter",
+      "labels": {},
+      "width": 1440
+    }
+  ],
+  "type": "frame",
+  "fill": "white",
+  "dir": "VERTICAL"
+}

@@ -1,0 +1,7 @@
+/* Порядок сохраняет каскад базовых, адаптивных и специальных стилей. */
+@import './base.css';
+@import './common.css';
+@import './public-pages.css';
+@import './staff.css';
+@import './responsive.css';
+@import './home.css';

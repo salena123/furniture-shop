@@ -1,18 +1,10 @@
-import logo from './logo.svg';
-import './App.css';
-
-function App() {
+import { AuthProvider } from './context/AuthContext';
+import { Site } from './layouts/Site';
+import './styles/index.css';
+export default function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          КОЛЯ ГЕЙ!!!
-        </p>
-        
-      </header>
-    </div>
+    <AuthProvider>
+      <Site />
+    </AuthProvider>
   );
 }
-
-export default App;

@@ -13,6 +13,7 @@ from app.schemas.category import (
 )
 from app.security import get_optional_current_user, require_admin
 from app.services.pagination import paginate_query
+from app.services.category_tree import validate_category_parent, visible_category_ids
 
 router = APIRouter(
     prefix="/api/categories",
@@ -31,7 +32,7 @@ def _get_category_or_404(
 
     if not include_inactive:
         query = query.filter(
-            Category.is_active == True
+            Category.id.in_(visible_category_ids(db))
         )
 
     category = query.first()
@@ -125,7 +126,7 @@ def get_categories(
 
     if not include_inactive:
         query = query.filter(
-            Category.is_active == True
+            Category.id.in_(visible_category_ids(db))
         )
 
     if parent_id is not None:
@@ -169,7 +170,7 @@ def get_category_by_slug(
 
     if not include_inactive:
         query = query.filter(
-            Category.is_active == True
+            Category.id.in_(visible_category_ids(db))
         )
 
     category = query.first()
@@ -220,11 +221,7 @@ def update_category(
         current_category_id=category.id
     )
 
-    if category_data.parent_id == category.id:
-        raise HTTPException(
-            status_code=400,
-            detail="Категория не может быть родителем самой себя"
-        )
+    validate_category_parent(category.id, category_data.parent_id, db)
 
     if category_data.parent_id is not None:
         _get_category_or_404(category_data.parent_id, db)
@@ -271,11 +268,8 @@ def patch_category(
             current_category_id=category.id
         )
 
-    if update_data.get("parent_id") == category.id:
-        raise HTTPException(
-            status_code=400,
-            detail="Категория не может быть родителем самой себя"
-        )
+    if "parent_id" in update_data:
+        validate_category_parent(category.id, update_data["parent_id"], db)
 
     if "parent_id" in update_data and update_data["parent_id"] is not None:
         _get_category_or_404(update_data["parent_id"], db)

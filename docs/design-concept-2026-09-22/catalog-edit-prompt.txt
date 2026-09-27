@@ -1,0 +1,7 @@
+Use case: precise-object-edit / ui-mockup.
+Input image 1 is a STYLE REFERENCE for the shared website header and footer only (home page).
+Input image 2 is the EDIT TARGET (catalog of "Угловые кухни").
+Edit only the top header, category navigation bar, and footer of the second image so they use the same visual identity as the first image.
+Match the small furniture icon logo with green/ochre/burgundy silhouettes, bold sans "МАЭСТРО" with "Мебель на заказ" below. Retain green "О нас" and "Контакты" buttons and burgundy outlined "Войти" with user icon. Replace the full dark green nav strip with the homepage's WHITE navigation row, a compact green hamburger "Каталог" button, and dark links with small chevrons "Кухни", "Шкафы", "Гардеробные", "Гостиные", "Прихожие". Thin grey divider. Keep header compact and proportionate to a desktop catalog.
+In footer replace serif logo with matching sans "МАЭСТРО", remove the invented "© 2024" and rights text entirely; keep "О нас", "Контакты", "Для сотрудников".
+PRESERVE the catalog body: left category tree, breadcrumb, title, filters, beautiful 2x2 kitchen photo grid, all card names and descriptions, "Подробнее" links. Do not create a homepage hero, do not blend images into a collage. The final output is ONE complete catalog page screenshot. It may be a little taller to fit the adjusted header, retain legible correct Russian text. Do not change photos. No Figma UI, no browser chrome. Match the shared typography and green/burgundy palette.

@@ -1,0 +1,915 @@
+[
+  {
+    "key": "button:primary",
+    "tree": {
+      "type": "component",
+      "name": "Style=primary",
+      "dir": "HORIZONTAL",
+      "width": 180,
+      "children": [
+        {
+          "type": "text",
+          "text": "Кнопка",
+          "size": 16,
+          "color": "white",
+          "weight": "SemiBold",
+          "name": "Label",
+          "property": "Label"
+        }
+      ],
+      "height": 44,
+      "padX": 16,
+      "fill": "green",
+      "radius": 8,
+      "align": "CENTER",
+      "justify": "CENTER"
+    }
+  },
+  {
+    "key": "button:accent",
+    "tree": {
+      "type": "component",
+      "name": "Style=accent",
+      "dir": "HORIZONTAL",
+      "width": 180,
+      "children": [
+        {
+          "type": "text",
+          "text": "Кнопка",
+          "size": 16,
+          "color": "white",
+          "weight": "SemiBold",
+          "name": "Label",
+          "property": "Label"
+        }
+      ],
+      "height": 44,
+      "padX": 16,
+      "fill": "burgundy",
+      "radius": 8,
+      "align": "CENTER",
+      "justify": "CENTER"
+    }
+  },
+  {
+    "key": "button:outline",
+    "tree": {
+      "type": "component",
+      "name": "Style=outline",
+      "dir": "HORIZONTAL",
+      "width": 180,
+      "children": [
+        {
+          "type": "text",
+          "text": "Кнопка",
+          "size": 16,
+          "color": "ink",
+          "weight": "SemiBold",
+          "name": "Label",
+          "property": "Label"
+        }
+      ],
+      "height": 44,
+      "padX": 16,
+      "fill": "white",
+      "radius": 8,
+      "align": "CENTER",
+      "justify": "CENTER",
+      "stroke": "border"
+    }
+  },
+  {
+    "key": "button:ghost",
+    "tree": {
+      "type": "component",
+      "name": "Style=ghost",
+      "dir": "HORIZONTAL",
+      "width": 180,
+      "children": [
+        {
+          "type": "text",
+          "text": "Кнопка",
+          "size": 16,
+          "color": "ink",
+          "weight": "SemiBold",
+          "name": "Label",
+          "property": "Label"
+        }
+      ],
+      "height": 44,
+      "padX": 16,
+      "fill": null,
+      "radius": 8,
+      "align": "CENTER",
+      "justify": "CENTER"
+    }
+  },
+  {
+    "key": "button:selected",
+    "tree": {
+      "type": "component",
+      "name": "Style=selected",
+      "dir": "HORIZONTAL",
+      "width": 180,
+      "children": [
+        {
+          "type": "text",
+          "text": "Кнопка",
+          "size": 16,
+          "color": "green",
+          "weight": "SemiBold",
+          "name": "Label",
+          "property": "Label"
+        }
+      ],
+      "height": 44,
+      "padX": 16,
+      "fill": "greenTint",
+      "radius": 8,
+      "align": "CENTER",
+      "justify": "CENTER"
+    }
+  },
+  {
+    "key": "field",
+    "tree": {
+      "type": "component",
+      "name": "Field",
+      "dir": "HORIZONTAL",
+      "width": 300,
+      "children": [
+        {
+          "type": "text",
+          "text": "Значение",
+          "size": 14,
+          "color": "muted",
+          "weight": "Regular",
+          "name": "Label",
+          "property": "Label"
+        }
+      ],
+      "height": 44,
+      "padX": 16,
+      "fill": "white",
+      "stroke": "border",
+      "radius": 8,
+      "align": "CENTER"
+    }
+  },
+  {
+    "key": "badge:green",
+    "tree": {
+      "type": "component",
+      "name": "Badge / green",
+      "dir": "HORIZONTAL",
+      "width": 110,
+      "children": [
+        {
+          "type": "text",
+          "text": "Новая",
+          "size": 12,
+          "color": "green",
+          "weight": "SemiBold",
+          "name": "Label",
+          "property": "Label"
+        }
+      ],
+      "height": 32,
+      "padX": 12,
+      "fill": "greenTint",
+      "radius": 8,
+      "align": "CENTER",
+      "justify": "CENTER"
+    }
+  },
+  {
+    "key": "badge:gold",
+    "tree": {
+      "type": "component",
+      "name": "Badge / gold",
+      "dir": "HORIZONTAL",
+      "width": 110,
+      "children": [
+        {
+          "type": "text",
+          "text": "Новая",
+          "size": 12,
+          "color": "gold",
+          "weight": "SemiBold",
+          "name": "Label",
+          "property": "Label"
+        }
+      ],
+      "height": 32,
+      "padX": 12,
+      "fill": "goldTint",
+      "radius": 8,
+      "align": "CENTER",
+      "justify": "CENTER"
+    }
+  },
+  {
+    "key": "badge:gray",
+    "tree": {
+      "type": "component",
+      "name": "Badge / gray",
+      "dir": "HORIZONTAL",
+      "width": 110,
+      "children": [
+        {
+          "type": "text",
+          "text": "Новая",
+          "size": 12,
+          "color": "muted",
+          "weight": "SemiBold",
+          "name": "Label",
+          "property": "Label"
+        }
+      ],
+      "height": 32,
+      "padX": 12,
+      "fill": "bg",
+      "radius": 8,
+      "align": "CENTER",
+      "justify": "CENTER"
+    }
+  },
+  {
+    "key": "brand",
+    "tree": {
+      "type": "component",
+      "name": "Brand",
+      "dir": "VERTICAL",
+      "width": 196,
+      "children": [
+        {
+          "type": "text",
+          "text": "МАЭСТРО",
+          "size": 26,
+          "color": "ink",
+          "weight": "Bold",
+          "name": "Brand"
+        },
+        {
+          "type": "text",
+          "text": "Мебель на заказ",
+          "size": 12,
+          "color": "muted",
+          "weight": "Regular"
+        }
+      ],
+      "gap": 2
+    }
+  },
+  {
+    "key": "product",
+    "tree": {
+      "type": "component",
+      "name": "Product card",
+      "dir": "VERTICAL",
+      "width": 516,
+      "children": [
+        {
+          "type": "photo",
+          "name": "Photo",
+          "photo": 0,
+          "width": 516,
+          "height": 248,
+          "radius": 10
+        },
+        {
+          "type": "frame",
+          "name": "Описание работы",
+          "dir": "VERTICAL",
+          "width": 516,
+          "children": [
+            {
+              "type": "text",
+              "text": "Кухня «Гранат»",
+              "size": 18,
+              "color": "ink",
+              "weight": "SemiBold",
+              "name": "Title",
+              "property": "Title"
+            },
+            {
+              "type": "text",
+              "text": "Эмаль · Современный стиль",
+              "size": 14,
+              "color": "muted",
+              "weight": "Regular",
+              "name": "Subtitle",
+              "property": "Subtitle"
+            },
+            {
+              "type": "text",
+              "text": "Подробнее ↗",
+              "size": 14,
+              "color": "burgundy",
+              "weight": "Medium"
+            }
+          ],
+          "padX": 12,
+          "padY": 12,
+          "gap": 4
+        }
+      ],
+      "fill": "white",
+      "radius": 10,
+      "stroke": "border"
+    }
+  },
+  {
+    "key": "requestRow",
+    "tree": {
+      "type": "component",
+      "name": "Request row",
+      "dir": "HORIZONTAL",
+      "width": 520,
+      "children": [
+        {
+          "type": "frame",
+          "name": "Заявка",
+          "dir": "VERTICAL",
+          "width": 194,
+          "children": [
+            {
+              "type": "text",
+              "text": "№ 1048",
+              "size": 16,
+              "color": "ink",
+              "weight": "SemiBold",
+              "name": "Number",
+              "property": "Number"
+            },
+            {
+              "type": "text",
+              "text": "Угловая кухня",
+              "size": 12,
+              "color": "muted",
+              "weight": "Regular",
+              "width": 186,
+              "name": "Project",
+              "property": "Project"
+            }
+          ],
+          "gap": 4
+        },
+        {
+          "type": "text",
+          "text": "Елена П.",
+          "size": 14,
+          "color": "ink",
+          "weight": "Medium",
+          "width": 140,
+          "name": "Client",
+          "property": "Client"
+        },
+        {
+          "type": "instance",
+          "ref": "badge:green",
+          "labels": {
+            "Label": "Новая"
+          },
+          "width": 106,
+          "height": 32,
+          "name": "Status"
+        }
+      ],
+      "height": 88,
+      "padX": 24,
+      "gap": 16,
+      "align": "CENTER",
+      "fill": "white"
+    }
+  },
+  {
+    "key": "adminRow",
+    "tree": {
+      "type": "component",
+      "name": "Catalog row",
+      "dir": "HORIZONTAL",
+      "width": 912,
+      "children": [
+        {
+          "type": "photo",
+          "name": "Photo",
+          "photo": 0,
+          "width": 112,
+          "height": 70,
+          "radius": 8
+        },
+        {
+          "type": "frame",
+          "name": "Название",
+          "dir": "VERTICAL",
+          "width": 274,
+          "children": [
+            {
+              "type": "text",
+              "text": "Кухня «Гранат»",
+              "size": 16,
+              "color": "ink",
+              "weight": "SemiBold",
+              "width": 274,
+              "name": "Title",
+              "property": "Title"
+            },
+            {
+              "type": "text",
+              "text": "Эмаль, камень",
+              "size": 12,
+              "color": "muted",
+              "weight": "Regular",
+              "width": 274,
+              "name": "Material",
+              "property": "Material"
+            }
+          ],
+          "gap": 4
+        },
+        {
+          "type": "text",
+          "text": "Угловые",
+          "size": 14,
+          "color": "muted",
+          "weight": "Regular",
+          "width": 144
+        },
+        {
+          "type": "instance",
+          "ref": "badge:green",
+          "labels": {
+            "Label": "На сайте"
+          },
+          "width": 120,
+          "height": 32,
+          "name": "Status"
+        },
+        {
+          "type": "text",
+          "text": "↗     ⋮",
+          "size": 18,
+          "color": "muted",
+          "weight": "Medium",
+          "width": 50
+        }
+      ],
+      "height": 100,
+      "padX": 24,
+      "gap": 16,
+      "align": "CENTER",
+      "fill": "white"
+    }
+  },
+  {
+    "key": "publicHeader",
+    "tree": {
+      "type": "component",
+      "name": "Public header",
+      "dir": "VERTICAL",
+      "width": 1440,
+      "children": [
+        {
+          "type": "frame",
+          "name": "Шапка",
+          "dir": "HORIZONTAL",
+          "width": 1440,
+          "children": [
+            {
+              "type": "instance",
+              "ref": "brand",
+              "labels": {}
+            },
+            {
+              "type": "frame",
+              "name": "Ссылки",
+              "dir": "HORIZONTAL",
+              "width": 396,
+              "children": [
+                {
+                  "type": "instance",
+                  "ref": "button:primary",
+                  "labels": {
+                    "Label": "О нас"
+                  },
+                  "width": 112,
+                  "height": 44
+                },
+                {
+                  "type": "instance",
+                  "ref": "button:primary",
+                  "labels": {
+                    "Label": "Контакты"
+                  },
+                  "width": 140,
+                  "height": 44
+                },
+                {
+                  "type": "instance",
+                  "ref": "button:outline",
+                  "labels": {
+                    "Label": "Войти"
+                  },
+                  "width": 112,
+                  "height": 44
+                }
+              ],
+              "gap": 16
+            }
+          ],
+          "height": 104,
+          "padX": 64,
+          "align": "CENTER",
+          "justify": "SPACE_BETWEEN"
+        },
+        {
+          "type": "frame",
+          "name": "Категории",
+          "dir": "HORIZONTAL",
+          "width": 1440,
+          "children": [
+            {
+              "type": "instance",
+              "ref": "button:primary",
+              "labels": {
+                "Label": "☰  Каталог"
+              },
+              "width": 172,
+              "height": 44
+            },
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "Кухни  ⌄"
+              },
+              "width": 150,
+              "height": 44
+            },
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "Шкафы  ⌄"
+              },
+              "width": 150,
+              "height": 44
+            },
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "Гардеробные  ⌄"
+              },
+              "width": 200,
+              "height": 44
+            },
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "Гостиные  ⌄"
+              },
+              "width": 164,
+              "height": 44
+            },
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "Прихожие  ⌄"
+              },
+              "width": 180,
+              "height": 44
+            }
+          ],
+          "height": 64,
+          "padX": 64,
+          "gap": 20,
+          "align": "CENTER"
+        }
+      ],
+      "fill": "white"
+    }
+  },
+  {
+    "key": "publicFooter",
+    "tree": {
+      "type": "component",
+      "name": "Public footer",
+      "dir": "HORIZONTAL",
+      "width": 1440,
+      "children": [
+        {
+          "type": "instance",
+          "ref": "brand",
+          "labels": {}
+        },
+        {
+          "type": "frame",
+          "name": "Ссылки",
+          "dir": "HORIZONTAL",
+          "width": 488,
+          "children": [
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "О нас"
+              },
+              "width": 100,
+              "height": 44
+            },
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "Контакты"
+              },
+              "width": 128,
+              "height": 44
+            },
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "Для сотрудников"
+              },
+              "width": 212,
+              "height": 44
+            }
+          ],
+          "gap": 24
+        }
+      ],
+      "height": 104,
+      "padX": 64,
+      "align": "CENTER",
+      "justify": "SPACE_BETWEEN",
+      "fill": "white"
+    }
+  },
+  {
+    "key": "staffSidebar:manager",
+    "tree": {
+      "type": "component",
+      "name": "Sidebar / manager",
+      "dir": "VERTICAL",
+      "width": 224,
+      "children": [
+        {
+          "type": "frame",
+          "name": "Верх",
+          "dir": "VERTICAL",
+          "width": 192,
+          "children": [
+            {
+              "type": "instance",
+              "ref": "brand",
+              "labels": {},
+              "width": 192
+            },
+            {
+              "type": "text",
+              "text": "Кабинет сотрудника",
+              "size": 12,
+              "color": "muted",
+              "weight": "Regular"
+            },
+            {
+              "type": "frame",
+              "name": "Навигация",
+              "dir": "VERTICAL",
+              "width": 192,
+              "children": [
+                {
+                  "type": "instance",
+                  "ref": "button:selected",
+                  "labels": {
+                    "Label": "Заявки"
+                  },
+                  "width": 192,
+                  "height": 44
+                },
+                {
+                  "type": "instance",
+                  "ref": "button:ghost",
+                  "labels": {
+                    "Label": "Профиль"
+                  },
+                  "width": 192,
+                  "height": 44
+                }
+              ],
+              "gap": 8
+            }
+          ],
+          "gap": 24
+        },
+        {
+          "type": "frame",
+          "name": "Низ",
+          "dir": "VERTICAL",
+          "width": 192,
+          "children": [
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "Открыть сайт ↗"
+              },
+              "width": 192,
+              "height": 44
+            },
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "Выйти"
+              },
+              "width": 192,
+              "height": 44
+            }
+          ],
+          "gap": 8
+        }
+      ],
+      "height": 1120,
+      "padding": 16,
+      "justify": "SPACE_BETWEEN",
+      "fill": "white"
+    }
+  },
+  {
+    "key": "staffTopbar:manager",
+    "tree": {
+      "type": "component",
+      "name": "Toolbar / manager",
+      "dir": "HORIZONTAL",
+      "width": 1216,
+      "children": [
+        {
+          "type": "instance",
+          "ref": "badge:green",
+          "labels": {
+            "Label": "Менеджер"
+          },
+          "width": 176
+        },
+        {
+          "type": "text",
+          "text": "АК   Анна К.  ⌄",
+          "size": 14,
+          "color": "ink",
+          "weight": "Medium"
+        }
+      ],
+      "height": 64,
+      "padX": 32,
+      "align": "CENTER",
+      "justify": "SPACE_BETWEEN",
+      "fill": "white"
+    }
+  },
+  {
+    "key": "staffSidebar:admin",
+    "tree": {
+      "type": "component",
+      "name": "Sidebar / admin",
+      "dir": "VERTICAL",
+      "width": 224,
+      "children": [
+        {
+          "type": "frame",
+          "name": "Верх",
+          "dir": "VERTICAL",
+          "width": 192,
+          "children": [
+            {
+              "type": "instance",
+              "ref": "brand",
+              "labels": {},
+              "width": 192
+            },
+            {
+              "type": "text",
+              "text": "Кабинет сотрудника",
+              "size": 12,
+              "color": "muted",
+              "weight": "Regular"
+            },
+            {
+              "type": "frame",
+              "name": "Навигация",
+              "dir": "VERTICAL",
+              "width": 192,
+              "children": [
+                {
+                  "type": "instance",
+                  "ref": "button:ghost",
+                  "labels": {
+                    "Label": "Заявки"
+                  },
+                  "width": 192,
+                  "height": 44
+                },
+                {
+                  "type": "instance",
+                  "ref": "button:selected",
+                  "labels": {
+                    "Label": "Каталог"
+                  },
+                  "width": 192,
+                  "height": 44
+                },
+                {
+                  "type": "instance",
+                  "ref": "button:ghost",
+                  "labels": {
+                    "Label": "Сотрудники"
+                  },
+                  "width": 192,
+                  "height": 44
+                },
+                {
+                  "type": "instance",
+                  "ref": "button:ghost",
+                  "labels": {
+                    "Label": "Профиль"
+                  },
+                  "width": 192,
+                  "height": 44
+                }
+              ],
+              "gap": 8
+            }
+          ],
+          "gap": 24
+        },
+        {
+          "type": "frame",
+          "name": "Низ",
+          "dir": "VERTICAL",
+          "width": 192,
+          "children": [
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "Открыть сайт ↗"
+              },
+              "width": 192,
+              "height": 44
+            },
+            {
+              "type": "instance",
+              "ref": "button:ghost",
+              "labels": {
+                "Label": "Выйти"
+              },
+              "width": 192,
+              "height": 44
+            }
+          ],
+          "gap": 8
+        }
+      ],
+      "height": 1120,
+      "padding": 16,
+      "justify": "SPACE_BETWEEN",
+      "fill": "white"
+    }
+  },
+  {
+    "key": "staffTopbar:admin",
+    "tree": {
+      "type": "component",
+      "name": "Toolbar / admin",
+      "dir": "HORIZONTAL",
+      "width": 1216,
+      "children": [
+        {
+          "type": "instance",
+          "ref": "badge:green",
+          "labels": {
+            "Label": "Администратор"
+          },
+          "width": 176
+        },
+        {
+          "type": "text",
+          "text": "АМ   Администратор  ⌄",
+          "size": 14,
+          "color": "ink",
+          "weight": "Medium"
+        }
+      ],
+      "height": 64,
+      "padX": 32,
+      "align": "CENTER",
+      "justify": "SPACE_BETWEEN",
+      "fill": "white"
+    }
+  }
+]

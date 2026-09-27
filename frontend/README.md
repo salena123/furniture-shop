@@ -1,70 +1,68 @@
-# Getting Started with Create React App
+# Frontend Маэстро
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Frontend сделан на React и собирается через Create React App. Маршрутизация работает через hash в адресе, поэтому отдельный сервер роутинга для разработки не нужен.
 
-## Available Scripts
+## Запуск и проверки
 
-In the project directory, you can run:
+```powershell
+cd frontend
+npm install
+npm start
+```
 
-### `npm start`
+Проверки перед передачей проекта:
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+```powershell
+npm test -- --watchAll=false --runInBand
+npm run build
+npm run format:check
+```
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+`REACT_APP_API_URL` задаёт адрес FastAPI. Шаблон находится в [.env.example](.env.example).
 
-### `npm test`
+## Где искать нужную часть
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+| Что нужно изменить | Файл или папка |
+| --- | --- |
+| Общий каркас, маршруты и модальные заявки | [src/layouts/Site.js](src/layouts/Site.js) |
+| Шапка, подвал и меню кабинета | [src/components/layout](src/components/layout) |
+| Главная страница | [src/pages/public/HomePage.js](src/pages/public/HomePage.js) |
+| Карусель, работы и шаги | [src/components/home](src/components/home) |
+| Каталог и фильтры | [src/pages/public/CatalogPage.js](src/pages/public/CatalogPage.js), [src/components/catalog](src/components/catalog) |
+| Страница проекта и форма заявки | [src/pages/public/ProductPage.js](src/pages/public/ProductPage.js), [src/components/enquiry/EnquiryDialog.js](src/components/enquiry/EnquiryDialog.js) |
+| Кабинет менеджера | [src/pages/staff](src/pages/staff), [src/components/requests](src/components/requests) |
+| Кабинет администратора | [src/pages/admin/AdminPage.js](src/pages/admin/AdminPage.js), [src/components/admin](src/components/admin) |
+| Запросы к API и адрес backend | [src/services/api.js](src/services/api.js) |
+| Тексты пяти слайдов и пути к фотографиям | [src/config/slides.js](src/config/slides.js) |
+| Заглушки контактов | [src/config/contacts.js](src/config/contacts.js), [.env.example](.env.example) |
+| Цвета, рамки, размеры и адаптивность | [src/styles](src/styles) |
 
-### `npm run build`
+## Организация стилей
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+Все стили подключаются один раз в [src/styles/index.css](src/styles/index.css). Файлы импортируются в порядке каскада:
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- `base.css` — переменные, шапка, кнопки, каркас и базовые элементы;
+- `common.css` — общие карточки, формы, меню и диалоги;
+- `public-pages.css` — каталог, проект и публичные страницы;
+- `staff.css` — кабинет сотрудников и админские таблицы;
+- `responsive.css` — мобильные и широкие варианты;
+- `home.css` — карусель и секции главной страницы.
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+В JSX нет встроенных `style={{ ... }}`: размеры, цвета и кадрирование изображений настраиваются в CSS.
 
-### `npm run eject`
+## Фотографии
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Пять фотографий карусели лежат в `public/carusel/` и подключаются путями `/carusel/1.png` … `/carusel/5.png` в `src/config/slides.js`. Картинки карточек каталога пока намеренно показываются компонентом `ImagePlaceholder`, чтобы их можно было заменить единообразно после наполнения API.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Структура кода
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+- `components/` — переиспользуемые визуальные блоки;
+- `pages/` — содержимое отдельных маршрутов;
+- `layouts/` — общий каркас и кабинет;
+- `hooks/` — загрузка ресурсов и действия с API;
+- `context/` — авторизация сотрудника;
+- `config/` — тексты и описания полей;
+- `services/` — сетевой слой;
+- `utils/` — чистые вспомогательные функции.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Форматирование выполняется командой `npm run format`. Настройки находятся в [.prettierrc.json](.prettierrc.json).

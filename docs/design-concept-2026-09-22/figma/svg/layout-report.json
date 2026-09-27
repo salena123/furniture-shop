@@ -1,0 +1,33 @@
+{
+  "outputs": [
+    {
+      "name": "home",
+      "file": "01-home.svg",
+      "width": 1440,
+      "height": 938,
+      "layers": 49
+    },
+    {
+      "name": "catalog",
+      "file": "02-catalog.svg",
+      "width": 1440,
+      "height": 1203,
+      "layers": 93
+    },
+    {
+      "name": "manager",
+      "file": "03-manager.svg",
+      "width": 1440,
+      "height": 1120,
+      "layers": 120
+    },
+    {
+      "name": "admin",
+      "file": "04-admin.svg",
+      "width": 1440,
+      "height": 1200,
+      "layers": 133
+    }
+  ],
+  "issues": []
+}

@@ -1,0 +1,221 @@
+{
+  "type": "frame",
+  "name": "01 / Главная",
+  "width": 1440,
+  "dir": "VERTICAL",
+  "fill": "white",
+  "children": [
+    {
+      "type": "instance",
+      "ref": "publicHeader",
+      "labels": {}
+    },
+    {
+      "type": "frame",
+      "name": "Карусель",
+      "dir": "VERTICAL",
+      "width": 1440,
+      "children": [
+        {
+          "type": "frame",
+          "name": "Hero",
+          "dir": "NONE",
+          "width": 1312,
+          "children": [
+            {
+              "type": "photo",
+              "photo": 0,
+              "name": "Интерьер кухни",
+              "width": 1312,
+              "height": 570,
+              "radius": 12,
+              "abs": true
+            },
+            {
+              "type": "rect",
+              "name": "Тень под текстом",
+              "width": 700,
+              "height": 570,
+              "fill": "ink",
+              "opacity": 0.55,
+              "abs": true
+            },
+            {
+              "type": "frame",
+              "name": "Подпись слайда",
+              "dir": "VERTICAL",
+              "width": 560,
+              "children": [
+                {
+                  "type": "text",
+                  "text": "Мебель для\nвашего дома",
+                  "size": 56,
+                  "color": "white",
+                  "weight": "Bold",
+                  "width": 560
+                },
+                {
+                  "type": "text",
+                  "text": "По вашим размерам и пожеланиям",
+                  "size": 20,
+                  "color": "white",
+                  "weight": "Regular",
+                  "width": 530
+                },
+                {
+                  "type": "instance",
+                  "ref": "button:accent",
+                  "labels": {
+                    "Label": "Оставить заявку"
+                  },
+                  "width": 284,
+                  "height": 56
+                },
+                {
+                  "type": "text",
+                  "text": "Обсудим ваш проект и подберём материалы",
+                  "size": 14,
+                  "color": "white",
+                  "weight": "Regular",
+                  "width": 500
+                }
+              ],
+              "gap": 24,
+              "abs": true,
+              "x": 80,
+              "y": 130
+            },
+            {
+              "type": "instance",
+              "ref": "button:outline",
+              "labels": {
+                "Label": "‹"
+              },
+              "width": 44,
+              "height": 44,
+              "abs": true,
+              "x": 20,
+              "y": 266
+            },
+            {
+              "type": "instance",
+              "ref": "button:outline",
+              "labels": {
+                "Label": "›"
+              },
+              "width": 44,
+              "height": 44,
+              "abs": true,
+              "x": 1248,
+              "y": 266
+            },
+            {
+              "type": "text",
+              "text": "01 / 03",
+              "size": 16,
+              "color": "white",
+              "weight": "SemiBold",
+              "abs": true,
+              "x": 1204,
+              "y": 530
+            }
+          ],
+          "height": 570,
+          "clip": true,
+          "radius": 12
+        },
+        {
+          "type": "frame",
+          "name": "Подписи карусели",
+          "dir": "HORIZONTAL",
+          "width": 1312,
+          "children": [
+            {
+              "type": "frame",
+              "name": "Кухни",
+              "dir": "VERTICAL",
+              "width": 416,
+              "children": [
+                {
+                  "type": "text",
+                  "text": "01   Кухни",
+                  "size": 24,
+                  "color": "green",
+                  "weight": "SemiBold"
+                },
+                {
+                  "type": "text",
+                  "text": "Продумано до мелочей",
+                  "size": 14,
+                  "color": "muted",
+                  "weight": "Regular"
+                }
+              ],
+              "padX": 24,
+              "padY": 24,
+              "gap": 8
+            },
+            {
+              "type": "frame",
+              "name": "Шкафы",
+              "dir": "VERTICAL",
+              "width": 416,
+              "children": [
+                {
+                  "type": "text",
+                  "text": "02   Шкафы",
+                  "size": 24,
+                  "color": "ink",
+                  "weight": "SemiBold"
+                },
+                {
+                  "type": "text",
+                  "text": "Порядок в каждой детали",
+                  "size": 14,
+                  "color": "muted",
+                  "weight": "Regular"
+                }
+              ],
+              "padX": 24,
+              "padY": 24,
+              "gap": 8
+            },
+            {
+              "type": "frame",
+              "name": "Гардеробные",
+              "dir": "VERTICAL",
+              "width": 416,
+              "children": [
+                {
+                  "type": "text",
+                  "text": "03   Гардеробные",
+                  "size": 24,
+                  "color": "ink",
+                  "weight": "SemiBold"
+                },
+                {
+                  "type": "text",
+                  "text": "Место для всего",
+                  "size": 14,
+                  "color": "muted",
+                  "weight": "Regular"
+                }
+              ],
+              "padX": 24,
+              "padY": 24,
+              "gap": 8
+            }
+          ],
+          "gap": 32
+        }
+      ],
+      "padX": 64,
+      "padY": 24
+    },
+    {
+      "type": "instance",
+      "ref": "publicFooter",
+      "labels": {}
+    }
+  ]
+}

@@ -171,6 +171,11 @@ def update_user(
                 detail=f"Поле {field} не может быть пустым"
             )
 
+    if user.role == "admin" and update_data.get("role") == "manager":
+        admins = db.query(User.id).filter(User.role == "admin").order_by(User.id).with_for_update().all()
+        if len(admins) <= 1:
+            raise HTTPException(status_code=400, detail="Нельзя изменить роль последнего администратора")
+
     if "login" in update_data:
         _ensure_login_is_free(update_data["login"], db, current_user_id=user.id)
         user.login = update_data["login"]
@@ -200,10 +205,10 @@ def delete_user(
     user = _get_user_or_404(user_id, db)
 
     if user.role == "admin":
-        admins_count = db.query(User).filter(
+        admins = db.query(User.id).filter(
             User.role == "admin"
-        ).count()
-        if admins_count == 1:
+        ).order_by(User.id).with_for_update().all()
+        if len(admins) <= 1:
             raise HTTPException(
                 status_code=400,
                 detail="Нельзя удалить последнего администратора"

@@ -1,0 +1,542 @@
+{
+  "type": "frame",
+  "name": "04 / Администратор",
+  "dir": "HORIZONTAL",
+  "width": 1440,
+  "height": 1160,
+  "fill": "bg",
+  "children": [
+    {
+      "type": "instance",
+      "ref": "staffSidebar:admin",
+      "labels": {},
+      "width": 224,
+      "height": 1160
+    },
+    {
+      "type": "frame",
+      "name": "Рабочая область",
+      "dir": "VERTICAL",
+      "width": 1216,
+      "height": 1160,
+      "fill": "bg",
+      "children": [
+        {
+          "type": "instance",
+          "ref": "staffTopbar:admin",
+          "labels": {},
+          "width": 1216
+        },
+        {
+          "type": "frame",
+          "name": "Управление каталогом",
+          "dir": "VERTICAL",
+          "width": 1216,
+          "padding": 32,
+          "gap": 24,
+          "fill": "bg",
+          "children": [
+            {
+              "type": "frame",
+              "name": "Заголовок",
+              "dir": "HORIZONTAL",
+              "width": 1152,
+              "justify": "SPACE_BETWEEN",
+              "align": "CENTER",
+              "children": [
+                {
+                  "type": "frame",
+                  "name": "Описание раздела",
+                  "dir": "VERTICAL",
+                  "width": 890,
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "text": "Каталог",
+                      "size": 40,
+                      "color": "ink",
+                      "weight": "SemiBold"
+                    },
+                    {
+                      "type": "text",
+                      "text": "Категории, товары и выполненные работы",
+                      "size": 16,
+                      "color": "muted",
+                      "weight": "Regular"
+                    }
+                  ]
+                },
+                {
+                  "type": "instance",
+                  "ref": "button:primary",
+                  "labels": {
+                    "Label": "+  Добавить работу"
+                  },
+                  "width": 230,
+                  "height": 48
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "Вкладки и поиск",
+              "dir": "HORIZONTAL",
+              "width": 1152,
+              "justify": "SPACE_BETWEEN",
+              "align": "CENTER",
+              "children": [
+                {
+                  "type": "frame",
+                  "name": "Вкладки",
+                  "dir": "HORIZONTAL",
+                  "width": 320,
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "instance",
+                      "ref": "button:selected",
+                      "labels": {
+                        "Label": "Работы"
+                      },
+                      "width": 112,
+                      "height": 44
+                    },
+                    {
+                      "type": "instance",
+                      "ref": "button:ghost",
+                      "labels": {
+                        "Label": "Категории"
+                      },
+                      "width": 136,
+                      "height": 44
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "name": "Поиск и категория",
+                  "dir": "HORIZONTAL",
+                  "width": 670,
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "instance",
+                      "ref": "field",
+                      "labels": {
+                        "Label": "Найти работу…"
+                      },
+                      "width": 438,
+                      "height": 44
+                    },
+                    {
+                      "type": "instance",
+                      "ref": "button:outline",
+                      "labels": {
+                        "Label": "Все категории  ⌄"
+                      },
+                      "width": 216,
+                      "height": 44
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "Категории и работы",
+              "dir": "HORIZONTAL",
+              "width": 1152,
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "name": "Дерево категорий",
+                  "dir": "VERTICAL",
+                  "width": 224,
+                  "height": 456,
+                  "fill": "white",
+                  "radius": 12,
+                  "padding": 20,
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "text": "Категории",
+                      "size": 16,
+                      "color": "ink",
+                      "weight": "SemiBold"
+                    },
+                    {
+                      "type": "instance",
+                      "ref": "button:ghost",
+                      "labels": {
+                        "Label": "⌄  Кухни"
+                      },
+                      "width": 184,
+                      "height": 36
+                    },
+                    {
+                      "type": "frame",
+                      "name": "Подкатегории кухни",
+                      "dir": "VERTICAL",
+                      "width": 184,
+                      "padX": 10,
+                      "gap": 2,
+                      "children": [
+                        {
+                          "type": "instance",
+                          "ref": "button:ghost",
+                          "labels": {
+                            "Label": "Прямые"
+                          },
+                          "width": 164,
+                          "height": 32
+                        },
+                        {
+                          "type": "instance",
+                          "ref": "button:selected",
+                          "labels": {
+                            "Label": "Угловые"
+                          },
+                          "width": 164,
+                          "height": 32
+                        },
+                        {
+                          "type": "instance",
+                          "ref": "button:ghost",
+                          "labels": {
+                            "Label": "П-образные"
+                          },
+                          "width": 164,
+                          "height": 32
+                        },
+                        {
+                          "type": "instance",
+                          "ref": "button:ghost",
+                          "labels": {
+                            "Label": "С островом"
+                          },
+                          "width": 164,
+                          "height": 32
+                        }
+                      ]
+                    },
+                    {
+                      "type": "instance",
+                      "ref": "button:ghost",
+                      "labels": {
+                        "Label": "›  Шкафы"
+                      },
+                      "width": 184,
+                      "height": 36
+                    },
+                    {
+                      "type": "instance",
+                      "ref": "button:ghost",
+                      "labels": {
+                        "Label": "›  Гардеробные"
+                      },
+                      "width": 184,
+                      "height": 36
+                    },
+                    {
+                      "type": "instance",
+                      "ref": "button:ghost",
+                      "labels": {
+                        "Label": "›  Гостиные"
+                      },
+                      "width": 184,
+                      "height": 36
+                    },
+                    {
+                      "type": "instance",
+                      "ref": "button:ghost",
+                      "labels": {
+                        "Label": "›  Прихожие"
+                      },
+                      "width": 184,
+                      "height": 36
+                    },
+                    {
+                      "type": "instance",
+                      "ref": "button:ghost",
+                      "labels": {
+                        "Label": "+  Категория"
+                      },
+                      "width": 184,
+                      "height": 36
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "name": "Работы",
+                  "dir": "VERTICAL",
+                  "width": 912,
+                  "height": 456,
+                  "fill": "white",
+                  "radius": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "name": "Заголовки таблицы",
+                      "dir": "HORIZONTAL",
+                      "width": 912,
+                      "height": 56,
+                      "padX": 24,
+                      "gap": 16,
+                      "align": "CENTER",
+                      "children": [
+                        {
+                          "type": "text",
+                          "text": "Работа",
+                          "size": 14,
+                          "color": "muted",
+                          "weight": "Medium",
+                          "width": 442
+                        },
+                        {
+                          "type": "text",
+                          "text": "Подкатегория",
+                          "size": 14,
+                          "color": "muted",
+                          "weight": "Medium",
+                          "width": 144
+                        },
+                        {
+                          "type": "text",
+                          "text": "Видимость",
+                          "size": 14,
+                          "color": "muted",
+                          "weight": "Medium",
+                          "width": 138
+                        },
+                        {
+                          "type": "text",
+                          "text": "Действия",
+                          "size": 14,
+                          "color": "muted",
+                          "weight": "Medium",
+                          "width": 92
+                        }
+                      ]
+                    },
+                    {
+                      "type": "instance",
+                      "ref": "adminRow",
+                      "width": 912,
+                      "photo": 0,
+                      "labels": {
+                        "Title": "Кухня «Гранат»",
+                        "Material": "Эмаль, камень",
+                        "Label": "На сайте"
+                      },
+                      "statusFill": "greenTint"
+                    },
+                    {
+                      "type": "instance",
+                      "ref": "adminRow",
+                      "width": 912,
+                      "photo": 1,
+                      "labels": {
+                        "Title": "Кухня «Тёплый дуб»",
+                        "Material": "МДФ, шпон",
+                        "Label": "На сайте"
+                      },
+                      "statusFill": "greenTint"
+                    },
+                    {
+                      "type": "instance",
+                      "ref": "adminRow",
+                      "width": 912,
+                      "photo": 2,
+                      "labels": {
+                        "Title": "Кухня «Шалфей»",
+                        "Material": "Эмаль",
+                        "Label": "На сайте"
+                      },
+                      "statusFill": "greenTint"
+                    },
+                    {
+                      "type": "instance",
+                      "ref": "adminRow",
+                      "width": 912,
+                      "photo": 3,
+                      "labels": {
+                        "Title": "Кухня «Лён»",
+                        "Material": "МДФ",
+                        "Label": "Скрыта"
+                      },
+                      "statusFill": "bg"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "Редактирование работы",
+              "dir": "VERTICAL",
+              "width": 1152,
+              "fill": "white",
+              "radius": 12,
+              "padding": 24,
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "name": "Заголовок редактора",
+                  "dir": "VERTICAL",
+                  "width": 1104,
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "text": "Редактирование работы",
+                      "size": 18,
+                      "color": "ink",
+                      "weight": "SemiBold"
+                    },
+                    {
+                      "type": "text",
+                      "text": "Кухня «Гранат»",
+                      "size": 14,
+                      "color": "muted",
+                      "weight": "Regular"
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "name": "Фото и параметры",
+                  "dir": "HORIZONTAL",
+                  "width": 1104,
+                  "gap": 24,
+                  "children": [
+                    {
+                      "type": "photo",
+                      "photo": 0,
+                      "width": 444,
+                      "height": 230,
+                      "radius": 8
+                    },
+                    {
+                      "type": "frame",
+                      "name": "Параметры публикации",
+                      "dir": "VERTICAL",
+                      "width": 636,
+                      "gap": 14,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "name": "Название работы",
+                          "dir": "VERTICAL",
+                          "width": 636,
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "text": "Название",
+                              "size": 14,
+                              "color": "muted",
+                              "weight": "Regular"
+                            },
+                            {
+                              "type": "instance",
+                              "ref": "field",
+                              "labels": {
+                                "Label": "Кухня «Гранат»"
+                              },
+                              "width": 636,
+                              "height": 44
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "name": "Выбор подкатегории",
+                          "dir": "VERTICAL",
+                          "width": 636,
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "text": "Подкатегория",
+                              "size": 14,
+                              "color": "muted",
+                              "weight": "Regular"
+                            },
+                            {
+                              "type": "instance",
+                              "ref": "button:outline",
+                              "labels": {
+                                "Label": "Кухни / Угловые  ⌄"
+                              },
+                              "width": 636,
+                              "height": 40
+                            }
+                          ]
+                        },
+                        {
+                          "type": "text",
+                          "text": "☑  Показывать на сайте",
+                          "size": 14,
+                          "color": "green",
+                          "weight": "Medium"
+                        },
+                        {
+                          "type": "frame",
+                          "name": "Действия редактора",
+                          "dir": "HORIZONTAL",
+                          "width": 636,
+                          "gap": 12,
+                          "children": [
+                            {
+                              "type": "instance",
+                              "ref": "button:primary",
+                              "labels": {
+                                "Label": "Сохранить"
+                              },
+                              "width": 150,
+                              "height": 40
+                            },
+                            {
+                              "type": "instance",
+                              "ref": "button:outline",
+                              "labels": {
+                                "Label": "Отмена"
+                              },
+                              "width": 120,
+                              "height": 40
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "Подпись",
+              "dir": "HORIZONTAL",
+              "width": 1152,
+              "justify": "SPACE_BETWEEN",
+              "children": [
+                {
+                  "type": "text",
+                  "text": "Демонстрационные данные",
+                  "size": 12,
+                  "color": "muted",
+                  "weight": "Regular"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -130,6 +130,7 @@ Query:
 
 ```text
 category_id?: number
+include_descendants?: boolean
 material_id?: number
 search?: string
 include_inactive?: boolean
@@ -138,6 +139,8 @@ offset?: number
 ```
 
 `include_inactive=true` доступен только админу.
+
+`include_descendants=true` включает товары всех вложенных подкатегорий. По умолчанию фильтр `category_id` выбирает только указанную категорию. Публичные списки, карточки по ID/slug и заявки доступны только для опубликованных товаров с полностью опубликованной цепочкой категорий. Скрытие родительской категории не меняет собственные флаги публикации потомков.
 
 ### GET `/api/products/{product_id}`
 

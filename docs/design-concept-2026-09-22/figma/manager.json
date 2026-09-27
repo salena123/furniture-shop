@@ -1,0 +1,514 @@
+{
+  "type": "frame",
+  "name": "03 / Менеджер",
+  "dir": "HORIZONTAL",
+  "width": 1440,
+  "height": 1120,
+  "fill": "bg",
+  "children": [
+    {
+      "type": "staffSidebar",
+      "role": "manager",
+      "width": 224,
+      "height": 1120
+    },
+    {
+      "type": "frame",
+      "name": "Рабочая область",
+      "dir": "VERTICAL",
+      "width": 1216,
+      "fill": "bg",
+      "height": 1120,
+      "children": [
+        {
+          "type": "staffTopbar",
+          "role": "manager",
+          "width": 1216
+        },
+        {
+          "type": "frame",
+          "name": "Заявки и карточка обращения",
+          "dir": "VERTICAL",
+          "width": 1216,
+          "padding": 32,
+          "gap": 24,
+          "fill": "bg",
+          "children": [
+            {
+              "type": "frame",
+              "name": "Заголовок",
+              "dir": "HORIZONTAL",
+              "width": 1152,
+              "align": "CENTER",
+              "justify": "SPACE_BETWEEN",
+              "children": [
+                {
+                  "type": "frame",
+                  "name": "Описание раздела",
+                  "dir": "VERTICAL",
+                  "width": 890,
+                  "gap": 6,
+                  "children": [
+                    {
+                      "type": "text",
+                      "text": "Заявки",
+                      "size": 40,
+                      "color": "ink",
+                      "weight": "SemiBold"
+                    },
+                    {
+                      "type": "text",
+                      "text": "Обращения клиентов и история общения",
+                      "size": 16,
+                      "color": "muted",
+                      "weight": "Regular"
+                    }
+                  ]
+                },
+                {
+                  "type": "button",
+                  "label": "+  Новая заявка",
+                  "variant": "primary",
+                  "width": 230,
+                  "height": 48
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "Фильтры",
+              "dir": "HORIZONTAL",
+              "width": 1152,
+              "justify": "SPACE_BETWEEN",
+              "align": "CENTER",
+              "children": [
+                {
+                  "type": "frame",
+                  "name": "Назначение заявок",
+                  "dir": "HORIZONTAL",
+                  "width": 470,
+                  "gap": 8,
+                  "children": [
+                    {
+                      "type": "button",
+                      "label": "Все",
+                      "variant": "outline",
+                      "width": 64,
+                      "height": 44
+                    },
+                    {
+                      "type": "button",
+                      "label": "Мои",
+                      "variant": "selected",
+                      "width": 72,
+                      "height": 44
+                    },
+                    {
+                      "type": "button",
+                      "label": "Без ответственного",
+                      "variant": "outline",
+                      "width": 218,
+                      "height": 44
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "name": "Поиск и статус",
+                  "dir": "HORIZONTAL",
+                  "width": 650,
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "field",
+                      "label": "Имя, телефон или номер заявки",
+                      "width": 438
+                    },
+                    {
+                      "type": "button",
+                      "label": "Все статусы  ⌄",
+                      "variant": "outline",
+                      "width": 196,
+                      "height": 44
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "Список и подробности",
+              "dir": "HORIZONTAL",
+              "width": 1152,
+              "gap": 16,
+              "children": [
+                {
+                  "type": "frame",
+                  "name": "Список заявок",
+                  "dir": "VERTICAL",
+                  "width": 520,
+                  "height": 800,
+                  "fill": "white",
+                  "radius": 12,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "name": "Колонки",
+                      "dir": "HORIZONTAL",
+                      "width": 520,
+                      "height": 56,
+                      "padX": 24,
+                      "align": "CENTER",
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "text": "Заявка",
+                          "size": 14,
+                          "color": "muted",
+                          "weight": "Medium",
+                          "width": 202
+                        },
+                        {
+                          "type": "text",
+                          "text": "Клиент",
+                          "size": 14,
+                          "color": "muted",
+                          "weight": "Medium",
+                          "width": 140
+                        },
+                        {
+                          "type": "text",
+                          "text": "Статус",
+                          "size": 14,
+                          "color": "muted",
+                          "weight": "Medium",
+                          "width": 106
+                        }
+                      ]
+                    },
+                    {
+                      "type": "requestRow",
+                      "number": "1048",
+                      "project": "Угловая кухня",
+                      "client": "Елена П.",
+                      "status": "Новая",
+                      "selected": true,
+                      "width": 520
+                    },
+                    {
+                      "type": "requestRow",
+                      "number": "1047",
+                      "project": "Шкаф в прихожую",
+                      "client": "Дмитрий С.",
+                      "status": "В работе",
+                      "selected": false,
+                      "width": 520
+                    },
+                    {
+                      "type": "requestRow",
+                      "number": "1046",
+                      "project": "Кухня с островом",
+                      "client": "Ольга М.",
+                      "status": "В работе",
+                      "selected": false,
+                      "width": 520
+                    },
+                    {
+                      "type": "requestRow",
+                      "number": "1045",
+                      "project": "Гардеробная",
+                      "client": "Иван Р.",
+                      "status": "Завершена",
+                      "selected": false,
+                      "width": 520
+                    },
+                    {
+                      "type": "requestRow",
+                      "number": "1044",
+                      "project": "Прямая кухня",
+                      "client": "Мария К.",
+                      "status": "Завершена",
+                      "selected": false,
+                      "width": 520
+                    },
+                    {
+                      "type": "frame",
+                      "name": "Итог списка",
+                      "dir": "HORIZONTAL",
+                      "width": 520,
+                      "padding": 24,
+                      "children": [
+                        {
+                          "type": "text",
+                          "text": "5 заявок",
+                          "size": 12,
+                          "color": "muted",
+                          "weight": "Regular"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "type": "frame",
+                  "name": "Карточка заявки",
+                  "dir": "VERTICAL",
+                  "width": 616,
+                  "height": 800,
+                  "fill": "white",
+                  "radius": 12,
+                  "padding": 24,
+                  "gap": 16,
+                  "children": [
+                    {
+                      "type": "frame",
+                      "name": "Обращение",
+                      "dir": "VERTICAL",
+                      "width": 568,
+                      "gap": 8,
+                      "children": [
+                        {
+                          "type": "text",
+                          "text": "Заявка № 1048",
+                          "size": 14,
+                          "color": "muted",
+                          "weight": "Regular"
+                        },
+                        {
+                          "type": "text",
+                          "text": "Угловая кухня",
+                          "size": 24,
+                          "color": "ink",
+                          "weight": "SemiBold"
+                        },
+                        {
+                          "type": "text",
+                          "text": "Елена П.   ·   +7 (•••) •••-••-••",
+                          "size": 18,
+                          "color": "ink",
+                          "weight": "Medium"
+                        },
+                        {
+                          "type": "text",
+                          "text": "Кухня «Гранат» ↗",
+                          "size": 14,
+                          "color": "green",
+                          "weight": "Medium"
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "name": "Разделитель",
+                      "dir": "HORIZONTAL",
+                      "width": 568,
+                      "height": 1,
+                      "fill": "border",
+                      "children": []
+                    },
+                    {
+                      "type": "frame",
+                      "name": "Статус и ответственный",
+                      "dir": "HORIZONTAL",
+                      "width": 568,
+                      "gap": 20,
+                      "children": [
+                        {
+                          "type": "frame",
+                          "name": "Статус",
+                          "dir": "VERTICAL",
+                          "width": 268,
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "text": "Статус",
+                              "size": 14,
+                              "color": "muted",
+                              "weight": "Regular"
+                            },
+                            {
+                              "type": "button",
+                              "label": "Новая  ⌄",
+                              "variant": "selected",
+                              "width": 268,
+                              "height": 44
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "name": "Ответственный",
+                          "dir": "VERTICAL",
+                          "width": 280,
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "text": "Ответственный",
+                              "size": 14,
+                              "color": "muted",
+                              "weight": "Regular"
+                            },
+                            {
+                              "type": "field",
+                              "label": "Анна К.",
+                              "width": 280
+                            },
+                            {
+                              "type": "text",
+                              "text": "Снять с себя",
+                              "size": 14,
+                              "color": "green",
+                              "weight": "Medium"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "name": "Пожелания",
+                      "dir": "VERTICAL",
+                      "width": 568,
+                      "gap": 10,
+                      "children": [
+                        {
+                          "type": "text",
+                          "text": "Пожелания клиента",
+                          "size": 18,
+                          "color": "ink",
+                          "weight": "SemiBold"
+                        },
+                        {
+                          "type": "text",
+                          "text": "Нужна угловая кухня в светлых тонах. Есть план помещения.",
+                          "size": 14,
+                          "color": "ink",
+                          "weight": "Regular",
+                          "width": 568
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "name": "Разделитель",
+                      "dir": "HORIZONTAL",
+                      "width": 568,
+                      "height": 1,
+                      "fill": "border",
+                      "children": []
+                    },
+                    {
+                      "type": "frame",
+                      "name": "Комментарии",
+                      "dir": "VERTICAL",
+                      "width": 568,
+                      "gap": 12,
+                      "children": [
+                        {
+                          "type": "text",
+                          "text": "Комментарии",
+                          "size": 18,
+                          "color": "ink",
+                          "weight": "SemiBold"
+                        },
+                        {
+                          "type": "frame",
+                          "name": "Комментарий Анны",
+                          "dir": "VERTICAL",
+                          "width": 568,
+                          "fill": "bg",
+                          "radius": 8,
+                          "padding": 16,
+                          "gap": 8,
+                          "children": [
+                            {
+                              "type": "text",
+                              "text": "Анна К.  ·  сегодня, 10:30",
+                              "size": 12,
+                              "color": "muted",
+                              "weight": "Medium"
+                            },
+                            {
+                              "type": "text",
+                              "text": "Уточнить размеры помещения и материал фасадов.",
+                              "size": 14,
+                              "color": "ink",
+                              "weight": "Regular",
+                              "width": 536
+                            }
+                          ]
+                        },
+                        {
+                          "type": "frame",
+                          "name": "Новый комментарий",
+                          "dir": "VERTICAL",
+                          "width": 568,
+                          "fill": "bg",
+                          "radius": 8,
+                          "padding": 16,
+                          "gap": 14,
+                          "children": [
+                            {
+                              "type": "text",
+                              "text": "Добавить комментарий…",
+                              "size": 14,
+                              "color": "muted",
+                              "weight": "Regular"
+                            },
+                            {
+                              "type": "frame",
+                              "name": "Отправка",
+                              "dir": "HORIZONTAL",
+                              "width": 536,
+                              "justify": "SPACE_BETWEEN",
+                              "children": [
+                                {
+                                  "type": "button",
+                                  "label": "Отправить",
+                                  "variant": "primary",
+                                  "width": 126,
+                                  "height": 36
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "type": "frame",
+                      "name": "Сохранение заявки",
+                      "dir": "HORIZONTAL",
+                      "width": 568,
+                      "justify": "SPACE_BETWEEN",
+                      "align": "CENTER",
+                      "children": [
+                        {
+                          "type": "text",
+                          "text": "Демонстрационные данные",
+                          "size": 12,
+                          "color": "muted",
+                          "weight": "Regular"
+                        },
+                        {
+                          "type": "button",
+                          "label": "Сохранить",
+                          "variant": "primary",
+                          "width": 158,
+                          "height": 44
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

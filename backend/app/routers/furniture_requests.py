@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from fastapi import Depends, APIRouter, HTTPException, Query
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm.attributes import set_committed_value
 
 from app.database import get_db
 from app.models.attribute_value import AttributeValue
@@ -27,6 +28,7 @@ from app.schemas.furniture_request import (
 from app.schemas.catalog import RequestStatusOption
 from app.security import require_admin, require_manager_or_admin
 from app.services.pagination import paginate_query
+from app.services.category_tree import visible_category_ids
 from app.services.serializers import (
     serialize_request,
     serialize_request_detail,
@@ -199,20 +201,30 @@ def _assign_request_manager(
     current_user: User,
     db: Session,
 ) -> None:
+    # Lock the current assignment so two managers cannot take the same free request.
+    assignment = db.query(FurnitureRequest.assigned_manager_id).filter(
+        FurnitureRequest.id == request.id
+    ).with_for_update().one_or_none()
+    if assignment is None:
+        raise HTTPException(status_code=404, detail="Заявка не найдена")
+    old_manager_id = assignment.assigned_manager_id
+    set_committed_value(request, "assigned_manager_id", old_manager_id)
     if (
         current_user.role == "manager"
-        and manager_id not in {current_user.id, None}
+        and (
+            manager_id not in {current_user.id, None}
+            or old_manager_id not in {current_user.id, None}
+        )
     ):
         raise HTTPException(
             status_code=403,
-            detail="Менеджер может назначить заявку только на себя"
+            detail="Менеджер может взять свободную заявку или снять с себя свою. Переназначение выполняет администратор."
         )
 
     manager = None
     if manager_id is not None:
         manager = _get_assignable_manager_or_404(manager_id, db)
 
-    old_manager_id = request.assigned_manager_id
     new_manager_id = manager.id if manager else None
 
     if old_manager_id == new_manager_id:
@@ -243,6 +255,8 @@ def create_request(
     product = None
     if request.product_id is not None:
         product = _get_product_or_404(request.product_id, db)
+        if not product.is_active or product.category_id not in visible_category_ids(db):
+            raise HTTPException(status_code=404, detail="Товар больше недоступен. Выберите другой проект или оставьте общую заявку.")
 
     material_id = request.material_id
     if material_id is not None:
