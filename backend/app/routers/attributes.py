@@ -51,10 +51,15 @@ def _get_attribute_or_404(
     return attribute
 
 
-def _get_attribute_value_or_404(value_id: int, db: Session) -> AttributeValue:
-    value = db.query(AttributeValue).filter(
+def _get_attribute_value_or_404(
+    value_id: int, db: Session, *, for_update: bool = False
+) -> AttributeValue:
+    query = db.query(AttributeValue).filter(
         AttributeValue.id == value_id
-    ).first()
+    )
+    if for_update:
+        query = query.with_for_update()
+    value = query.first()
 
     if not value:
         raise HTTPException(
@@ -368,15 +373,16 @@ def patch_attribute_value(
 )
 def delete_attribute_value(
     value_id: int,
+    force: bool = False,
     db: Session = Depends(get_db),
     _current_user: User = Depends(require_admin)
 ):
-    value = _get_attribute_value_or_404(value_id, db)
+    value = _get_attribute_value_or_404(value_id, db, for_update=True)
     products_count = db.query(ProductAttribute).filter(
         ProductAttribute.attribute_value_id == value.id
     ).count()
 
-    if products_count:
+    if products_count and not force:
         raise HTTPException(
             status_code=400,
             detail=(
@@ -385,9 +391,23 @@ def delete_attribute_value(
             )
         )
 
+    # The relationship cascade deletes only ProductAttribute links, not products.
     db.delete(value)
     db.commit()
 
     return {
         "message": "Значение атрибута успешно удалено"
     }
+
+
+@router.get("/values/{value_id}/usage")
+def get_attribute_value_usage(
+    value_id: int,
+    db: Session = Depends(get_db),
+    _current_user: User = Depends(require_admin),
+):
+    value = _get_attribute_value_or_404(value_id, db)
+    products_count = db.query(ProductAttribute).filter(
+        ProductAttribute.attribute_value_id == value.id
+    ).count()
+    return {"id": value.id, "value": value.value, "products_count": products_count}

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.validators import (
     normalize_optional_text,
@@ -16,7 +16,7 @@ class UserCreate(BaseModel):
     login: str
     name: str
     email: str | None = None
-    password: str
+    password: str = Field(max_length=256)
     role: UserRole = "manager"
 
     @field_validator("login", mode="before")
@@ -43,7 +43,7 @@ class UserUpdate(BaseModel):
     login: str | None = None
     name: str | None = None
     email: str | None = None
-    password: str | None = None
+    password: str | None = Field(default=None, max_length=256)
     role: UserRole | None = None
 
     @field_validator("login", mode="before")
@@ -74,7 +74,7 @@ class UserUpdate(BaseModel):
 
 class UserLogin(BaseModel):
     login: str
-    password: str
+    password: str = Field(max_length=256)
 
     @field_validator("login", mode="before")
     @classmethod
@@ -97,8 +97,6 @@ class UserResponse(BaseModel):
     last_login_at: datetime | None = None
 
 class TokenResponse(BaseModel):
-    access_token: str
-    token_type: str = "bearer"
     expires_in: int
     expires_at: datetime
     user: UserResponse

@@ -7,23 +7,20 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
+from app.models.auth_session import AuthSession
+from app.settings import TOKEN_SECRET, SESSION_COOKIE
 
 
-TOKEN_SECRET = (
-    os.getenv("SECRET_KEY")
-    or os.getenv("JWT_SECRET_KEY")
-    or "dev-secret-key-change-me-32-bytes-minimum"
-)
-JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
-TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))
+JWT_ALGORITHM = "HS256"
+TOKEN_EXPIRE_MINUTES = min(480, max(5, int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "120"))))
 TOKEN_EXPIRE_SECONDS = TOKEN_EXPIRE_MINUTES * 60
-PASSWORD_HASH_ITERATIONS = 120_000
+PASSWORD_HASH_ITERATIONS = 600_000
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -46,17 +43,18 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, password_hash: str) -> bool:
     try:
         algorithm, iterations, salt, expected_digest = password_hash.split("$", 3)
-    except ValueError:
+        iterations = int(iterations)
+    except (ValueError, TypeError):
         return False
 
-    if algorithm != "pbkdf2_sha256":
+    if algorithm != "pbkdf2_sha256" or not 1 <= iterations <= 2_000_000:
         return False
 
     digest = hashlib.pbkdf2_hmac(
         "sha256",
         password.encode("utf-8"),
         salt.encode("utf-8"),
-        int(iterations),
+        iterations,
     ).hex()
     return secrets.compare_digest(digest, expected_digest)
 
@@ -77,6 +75,7 @@ def get_access_token_expires_in(
 def create_access_token(
     user: User,
     expires_at: datetime | None = None,
+    session_id: str | None = None,
 ) -> str:
     issued_at = _utc_now()
     expires_at = expires_at or get_access_token_expires_at(issued_at)
@@ -86,6 +85,8 @@ def create_access_token(
         "type": "access",
         "iat": issued_at,
         "exp": expires_at,
+        "jti": session_id or secrets.token_hex(32),
+        "ver": user.auth_version or 0,
     }
 
     return jwt.encode(payload, TOKEN_SECRET, algorithm=JWT_ALGORITHM)
@@ -97,23 +98,26 @@ def decode_access_token(token: str) -> dict[str, Any]:
             token,
             TOKEN_SECRET,
             algorithms=[JWT_ALGORITHM],
+            options={"require": ["sub", "iat", "exp", "jti", "ver", "type"]},
         )
     except jwt.ExpiredSignatureError as exc:
         raise ValueError("Срок действия токена истёк") from exc
     except jwt.InvalidTokenError as exc:
         raise ValueError("Некорректный токен") from exc
 
-    if payload.get("type") != "access":
+    if payload.get("type") != "access" or not isinstance(payload.get("jti"), str) or not isinstance(payload.get("ver"), int):
         raise ValueError("Некорректный тип токена")
 
     return payload
 
 
 def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
-    if credentials is None:
+    token = credentials.credentials if credentials else request.cookies.get(SESSION_COOKIE)
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Нужна авторизация",
@@ -121,7 +125,7 @@ def get_current_user(
         )
 
     try:
-        payload = decode_access_token(credentials.credentials)
+        payload = decode_access_token(token)
         user_id = int(payload["sub"])
     except (KeyError, TypeError, ValueError):
         raise HTTPException(
@@ -131,24 +135,28 @@ def get_current_user(
         )
 
     user = db.query(User).filter(User.id == user_id).first()
-    if not user:
+    session_id = hashlib.sha256(payload['jti'].encode()).hexdigest()
+    session = db.query(AuthSession).filter(AuthSession.id == session_id, AuthSession.user_id == user_id, AuthSession.expires_at > _utc_now()).first()
+    if not user or not session or user.auth_version != payload['ver']:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Пользователь не найден",
+            detail="Сессия завершена. Войдите снова.",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    request.state.auth_session_id = session_id
     return user
 
 
 def get_optional_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User | None:
-    if credentials is None:
+    if credentials is None and not request.cookies.get(SESSION_COOKIE):
         return None
 
-    return get_current_user(credentials, db)
+    return get_current_user(request, credentials, db)
 
 
 def require_roles(*roles: str) -> Callable[[User], User]:

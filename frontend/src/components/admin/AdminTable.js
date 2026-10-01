@@ -73,19 +73,6 @@ export function AdminTable({ section, rows, titleOf, references, open, action, s
                   >
                     Изменить
                   </button>
-                  {section === 'products' && (
-                    <button
-                      className="text-button"
-                      onClick={() =>
-                        open({
-                          type: 'extras',
-                          item,
-                        })
-                      }
-                    >
-                      Фото и характеристики
-                    </button>
-                  )}
                   {section === 'attributes' && (
                     <button
                       className="text-button"

@@ -9,3 +9,6 @@ from app.models.product_attribute import ProductAttribute
 from app.models.furniture_request import FurnitureRequest
 from app.models.request_event import RequestEvent
 from app.models.furniture_comment import FurnitureComment
+from app.models.site_contacts import SiteContacts
+from app.models.site_about import SiteAbout
+from app.models.auth_session import AuthSession, AuthRateLimit

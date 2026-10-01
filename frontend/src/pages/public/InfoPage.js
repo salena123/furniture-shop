@@ -1,57 +1,35 @@
 import { Breadcrumbs } from '../../components/common/Breadcrumbs';
 import { PageHeading } from '../../components/common/PageHeading';
 import { ImagePlaceholder } from '../../components/common/ImagePlaceholder';
-import { contacts } from '../../config/contacts';
+import { resolveContacts } from '../../config/contacts';
+import { useResource } from '../../hooks/useResource';
+import { LoadState } from '../../components/common/Feedback';
+import { AboutPage } from './AboutPage';
 export function InfoPage({ type, onEnquiry }) {
-  const about = type === 'about';
+  return type === 'about' ? (
+    <AboutPage onEnquiry={onEnquiry} />
+  ) : (
+    <ContactsInfoPage onEnquiry={onEnquiry} />
+  );
+}
+
+function ContactsInfoPage({ onEnquiry }) {
+  const resource = useResource('/api/site/contacts');
+  const contacts = resolveContacts(resource.data);
   return (
     <section className="content-page">
       <Breadcrumbs
         items={[
           {
-            label: about ? 'О нас' : 'Контакты',
+            label: 'Контакты',
           },
         ]}
       />
-      <PageHeading
-        eyebrow="Мастерская мебели «Маэстро»"
-        title={about ? 'Мебель для вашего дома' : 'Давайте обсудим ваш проект'}
-      >
-        {about
-          ? 'Изготовление качественной и функциональной мебели.'
-          : 'Оставьте заявку — сотрудник свяжется с вами.'}
+      <PageHeading eyebrow="Мастерская мебели «Маэстро»" title="Давайте обсудим ваш проект">
+        Оставьте заявку — сотрудник свяжется с вами.
       </PageHeading>
-      {about ? (
-        <>
-          <div className="about-layout">
-            <ImagePlaceholder label="Фотография мастерской" />
-            <div className="soft-panel">
-              <h2>Индивидуальное решение начинается с ваших пожеланий</h2>
-              <p className="muted">
-                Посмотрите проекты в каталоге и расскажите, какую мебель вы представляете в своём
-                доме. В заявке можно указать размеры, материал, цвет и необходимость замера.
-              </p>
-              <a className="button primary" href="#/catalog">
-                Посмотреть работы
-              </a>
-            </div>
-          </div>
-          <h2 className="section-heading">Как обсудить проект</h2>
-          <div className="steps-grid">
-            {[
-              ['01', 'Выберите направление', 'Кухня, шкаф или другое решение из каталога.'],
-              ['02', 'Расскажите о пожеланиях', 'Укажите размеры и детали, которые важны для вас.'],
-              ['03', 'Обсудите с сотрудником', 'Оставьте удобное время для обратной связи.'],
-            ].map(([number, title, text]) => (
-              <div className="surface step" key={number}>
-                <span>{number}</span>
-                <h3>{title}</h3>
-                <p className="muted">{text}</p>
-              </div>
-            ))}
-          </div>
-        </>
-      ) : (
+      <LoadState resource={resource} />
+      {resource.data && (
         <div className="contacts-layout">
           <div className="contact-grid">
             {[
@@ -66,7 +44,11 @@ export function InfoPage({ type, onEnquiry }) {
             ].map(([label, value, href]) => (
               <div className="surface contact-item" key={label}>
                 <p className="eyebrow">{label}</p>
-                {href ? <a href={href}>{value}</a> : <p>{value || 'Информация скоро появится'}</p>}
+                {href ? (
+                  <a href={href}>{value}</a>
+                ) : (
+                  <p className="multiline">{value || 'Информация скоро появится'}</p>
+                )}
               </div>
             ))}
           </div>

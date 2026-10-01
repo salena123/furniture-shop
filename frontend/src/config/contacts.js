@@ -4,3 +4,8 @@ export const contacts = {
   hours: process.env.REACT_APP_CONTACT_HOURS,
   email: process.env.REACT_APP_CONTACT_EMAIL,
 };
+
+// Старые настройки .env действуют только до первого сохранения в админке.
+export function resolveContacts(data) {
+  return data?.configured ? data : contacts;
+}

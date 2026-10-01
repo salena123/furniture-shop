@@ -1,13 +1,9 @@
-export const API_BASE = (process.env.REACT_APP_API_URL || 'http://127.0.0.1:8000').replace(
-  /\/$/,
-  '',
-);
-export const TOKEN_KEY = 'maestro.staff.token';
-export const session = {
-  get: () => sessionStorage.getItem(TOKEN_KEY),
-  set: (token) =>
-    token ? sessionStorage.setItem(TOKEN_KEY, token) : sessionStorage.removeItem(TOKEN_KEY),
-};
+export const API_BASE = (
+  process.env.REACT_APP_API_URL ||
+  (process.env.NODE_ENV === 'production'
+    ? window.location.origin
+    : `http://${window.location.hostname}:8000`)
+).replace(/\/$/, '');
 export function query(path, params = {}) {
   const search = new URLSearchParams();
   Object.entries(params).forEach(([key, value]) => {
@@ -19,20 +15,18 @@ export function query(path, params = {}) {
 }
 export async function api(path, { body, auth = false, headers, ...options } = {}) {
   let response;
-  const token = auth && session.get();
   try {
     response = await fetch(`${API_BASE}${path}`, {
       ...options,
+      credentials: auth || path === '/api/auth/login' ? 'include' : 'omit',
       headers: {
         ...(body !== undefined && !(body instanceof FormData)
           ? {
               'Content-Type': 'application/json',
             }
           : {}),
-        ...(token
-          ? {
-              Authorization: `Bearer ${token}`,
-            }
+        ...(!['GET', 'HEAD'].includes((options.method || 'GET').toUpperCase())
+          ? { 'X-CSRF-Protection': '1' }
           : {}),
         ...headers,
       },
@@ -48,7 +42,8 @@ export async function api(path, { body, auth = false, headers, ...options } = {}
   }
   const data = response.status === 204 ? null : await response.json().catch(() => null);
   if (!response.ok) {
-    if (response.status === 401 && auth) window.dispatchEvent(new Event('maestro:session-expired'));
+    if (response.status === 401 && auth && path !== '/api/auth/me')
+      window.dispatchEvent(new Event('maestro:session-expired'));
     const detail = data?.detail;
     const message =
       response.status === 401 && auth

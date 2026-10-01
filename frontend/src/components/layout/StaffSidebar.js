@@ -23,9 +23,8 @@ export function StaffSidebar({ user, nav, section, logout }) {
       </nav>
       <button
         className="text-button logout-button"
-        onClick={() => {
-          logout();
-          window.location.hash = '#/';
+        onClick={async () => {
+          if (await logout()) window.location.hash = '#/';
         }}
       >
         Выйти из кабинета

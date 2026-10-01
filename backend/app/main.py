@@ -7,6 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.trustedhost import TrustedHostMiddleware
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from starlette.exceptions import HTTPException as StarletteHTTPException
@@ -23,8 +24,11 @@ from app.routers.users import router as users_router
 from app.routers.dashboard import router as dashboard_router
 from app.routers.materials import router as materials_router
 from app.routers.catalog import router as catalog_router
+from app.routers.site_contacts import router as site_contacts_router
+from app.routers.site_about import router as site_about_router
+from app.settings import ALLOWED_ORIGINS, PRODUCTION, SESSION_COOKIE
 
-app = FastAPI()
+app = FastAPI(docs_url=None if PRODUCTION else '/docs', redoc_url=None if PRODUCTION else '/redoc', openapi_url=None if PRODUCTION else '/openapi.json')
 
 
 ERROR_CODES = {
@@ -75,29 +79,46 @@ async def validation_exception_handler(
     content = {
         "error": "validation_error",
         "message": "Ошибка валидации данных",
-        "detail": exc.errors(),
+        "detail": [{"loc": item['loc'], "msg": item['msg'], "type": item['type']} for item in exc.errors()],
     }
     return JSONResponse(
         status_code=422,
         content=jsonable_encoder(content),
     )
 
-cors_origins = os.getenv(
-    "CORS_ORIGINS",
-    "http://localhost:3000,http://127.0.0.1:3000,"
-    "http://localhost:5173,http://127.0.0.1:5173"
-)
+@app.middleware('http')
+async def browser_security(request: Request, call_next):
+    if PRODUCTION and request.url.scheme != 'https':
+        return JSONResponse(status_code=400, content={'message': 'Требуется HTTPS'})
+    if request.method not in {'GET', 'HEAD', 'OPTIONS'}:
+        origin = request.headers.get('origin')
+        if origin is not None and origin not in ALLOWED_ORIGINS:
+            return JSONResponse(status_code=403, content={'message': 'Недопустимый источник запроса'})
+        cookie_auth = SESSION_COOKIE in request.cookies and not request.headers.get('authorization')
+        if cookie_auth and request.headers.get('x-csrf-protection') != '1':
+            return JSONResponse(status_code=403, content={'message': 'Не пройдена проверка защиты запроса'})
+    response = await call_next(request)
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    if request.url.path.startswith('/api/'):
+        response.headers['Cache-Control'] = 'no-store'
+    if PRODUCTION:
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000'
+    return response
+
+if PRODUCTION:
+    allowed_hosts = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '').split(',') if host.strip()]
+    if not allowed_hosts or '*' in allowed_hosts:
+        raise RuntimeError('Задайте ALLOWED_HOSTS для production')
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=allowed_hosts)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        origin.strip()
-        for origin in cors_origins.split(",")
-        if origin.strip()
-    ],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["Content-Type", "Authorization", "X-CSRF-Protection"],
 )
 
 static_dir = Path(__file__).resolve().parents[1] / "static"
@@ -108,6 +129,8 @@ app.include_router(auth_router)
 app.include_router(users_router)
 app.include_router(dashboard_router)
 app.include_router(catalog_router)
+app.include_router(site_contacts_router)
+app.include_router(site_about_router)
 app.include_router(furniture_requests_router)
 app.include_router(categories_router)
 app.include_router(materials_router)
@@ -120,8 +143,3 @@ app.include_router(furniture_comments_router)
 @app.get("/")
 def root():
     return {"message": "помидорка"}
-
-@app.get("/test-db")
-def test_db(db: Session = Depends(get_db)):
-    result = db.execute(text("SELECT 1"))
-    return {"database": result.scalar()}

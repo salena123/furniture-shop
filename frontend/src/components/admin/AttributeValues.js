@@ -5,6 +5,7 @@ import { api } from '../../services/api';
 import { Modal } from '../common/Modal';
 import { LoadState, ErrorNotice } from '../common/Feedback';
 import { Field } from '../common/Field';
+import { DeleteAttributeValue } from './DeleteAttributeValue';
 export function AttributeValues({ item, onClose, onChanged }) {
   const resource = useResource(`/api/attributes/${item.id}/details?include_inactive=true`, {
     auth: true,
@@ -37,7 +38,7 @@ export function AttributeValues({ item, onClose, onChanged }) {
   return (
     <Modal title={`Значения: ${item.name}`} onClose={onClose} busy={action.busy} wide>
       <LoadState resource={resource} />
-      <ErrorNotice message={action.error} />
+      {!remove && <ErrorNotice message={action.error} />}
       {resource.data && (
         <>
           <div className="value-list">
@@ -51,14 +52,21 @@ export function AttributeValues({ item, onClose, onChanged }) {
                   <button
                     className="text-button"
                     disabled={action.busy}
-                    onClick={() => setEdit(value)}
+                    onClick={() => {
+                      action.clearError();
+                      setRemove(null);
+                      setEdit(value);
+                    }}
                   >
                     Изменить
                   </button>
                   <button
                     className="text-button danger-text"
                     disabled={action.busy}
-                    onClick={() => setRemove(value)}
+                    onClick={() => {
+                      action.clearError();
+                      setRemove(value);
+                    }}
                   >
                     Удалить
                   </button>
@@ -72,33 +80,21 @@ export function AttributeValues({ item, onClose, onChanged }) {
         </>
       )}
       {remove && (
-        <div className="notice inline-confirm">
-          <p>Удалить «{remove.value}»?</p>
-          <button
-            className="button danger"
-            disabled={action.busy}
-            onClick={() =>
-              action.run(
-                () =>
-                  api(`/api/attributes/values/${remove.id}`, {
-                    method: 'DELETE',
-                    auth: true,
-                  }),
-                () => {
-                  setRemove(null);
-                  if (edit?.id === remove.id) setEdit(null);
-                  resource.reload();
-                  onChanged();
-                },
-              )
-            }
-          >
-            Удалить
-          </button>
-          <button className="text-button" onClick={() => setRemove(null)}>
-            Отмена
-          </button>
-        </div>
+        <DeleteAttributeValue
+          key={remove.id}
+          value={remove}
+          action={action}
+          onCancel={() => {
+            action.clearError();
+            setRemove(null);
+          }}
+          onDeleted={() => {
+            setRemove(null);
+            if (edit?.id === remove.id) setEdit(null);
+            resource.reload();
+            onChanged();
+          }}
+        />
       )}
       <form key={edit?.id || 'new'} onSubmit={save}>
         <h3>{edit ? 'Изменить значение' : 'Новое значение'}</h3>

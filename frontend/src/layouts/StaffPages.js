@@ -5,9 +5,11 @@ import { RequestDetail } from '../pages/staff/RequestDetail';
 import { RequestsPage } from '../pages/staff/RequestsPage';
 import { Profile } from '../pages/staff/Profile';
 import AdminPage from '../pages/admin/AdminPage';
-import { EmptyState } from '../components/common/Feedback';
+import { ContactsPage } from '../pages/admin/ContactsPage';
+import { AboutEditorPage } from '../pages/admin/AboutEditorPage';
+import { EmptyState, ErrorNotice } from '../components/common/Feedback';
 export default function StaffPages({ route, onCatalogChanged }) {
-  const { user, logout } = useAuth();
+  const { user, logout, error } = useAuth();
   const [path, search = ''] = route.replace('#', '').split('?');
   const segments = path.split('/').filter(Boolean);
   const section = segments[1] || 'overview';
@@ -21,6 +23,8 @@ export default function StaffPages({ route, onCatalogChanged }) {
           ['materials', 'Материалы'],
           ['attributes', 'Характеристики'],
           ['users', 'Сотрудники'],
+          ['contacts', 'Контакты сайта'],
+          ['about', 'Страница «О нас»'],
         ]
       : []),
     ['profile', 'Мой профиль'],
@@ -35,6 +39,8 @@ export default function StaffPages({ route, onCatalogChanged }) {
       <RequestsPage key={search} searchParams={new URLSearchParams(search)} />
     );
   else if (section === 'profile') content = <Profile />;
+  else if (section === 'contacts' && user.role === 'admin') content = <ContactsPage />;
+  else if (section === 'about' && user.role === 'admin') content = <AboutEditorPage />;
   else if (adminSections.includes(section) && user.role === 'admin')
     content = <AdminPage key={section} section={section} onCatalogChanged={onCatalogChanged} />;
   else
@@ -47,6 +53,7 @@ export default function StaffPages({ route, onCatalogChanged }) {
     <div className="staff-layout">
       <StaffSidebar user={user} nav={nav} section={section} logout={logout} />
       <section className="staff-content" key={section}>
+        <ErrorNotice message={error} />
         {content}
       </section>
     </div>

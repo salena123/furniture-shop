@@ -15,7 +15,7 @@ import RecordEditor from '../../components/common/RecordEditor';
 import { fieldsFor } from '../../config/adminFields';
 import { ConfirmDialog } from '../../components/common/ConfirmDialog';
 import { AttributeValues } from '../../components/admin/AttributeValues';
-import { ProductExtras } from '../../components/admin/ProductExtras';
+import { ProductEditor } from '../../components/admin/ProductEditor';
 export default function AdminPage({ section, onCatalogChanged }) {
   const { user, refresh } = useAuth();
   const [revision, setRevision] = useState(0);
@@ -170,7 +170,16 @@ export default function AdminPage({ section, onCatalogChanged }) {
         </>
       )}
       {!modal && <ErrorNotice message={action.error} />}
-      {modal?.type === 'edit' && (
+      {modal?.type === 'edit' && section === 'products' && (
+        <ProductEditor
+          item={modal.item}
+          references={references.data}
+          user={user}
+          onClose={() => setModal(null)}
+          onChanged={changed}
+        />
+      )}
+      {modal?.type === 'edit' && section !== 'products' && (
         <RecordEditor
           title={`${modal.item.id ? 'Изменить' : 'Добавить'} ${SINGULAR[section]}`}
           initial={modal.item}
@@ -217,9 +226,6 @@ export default function AdminPage({ section, onCatalogChanged }) {
       )}
       {modal?.type === 'values' && (
         <AttributeValues item={modal.item} onClose={() => setModal(null)} onChanged={changed} />
-      )}
-      {modal?.type === 'extras' && (
-        <ProductExtras item={modal.item} onClose={() => setModal(null)} onChanged={changed} />
       )}
     </>
   );

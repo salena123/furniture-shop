@@ -14,6 +14,7 @@ from app.models.product_attribute import ProductAttribute
 from app.models.request_event import RequestEvent
 from app.models.user import User
 from app.security import hash_password
+from app.settings import PRODUCTION
 
 
 ADMIN_LOGIN = os.getenv("SEED_ADMIN_LOGIN", "admin")
@@ -398,6 +399,8 @@ def _create_requests(db: Session) -> dict[str, int]:
 
 
 def seed_database() -> dict[str, int]:
+    if PRODUCTION:
+        raise RuntimeError('Демонстрационные данные запрещены в production. Используйте app.create_admin.')
     db = SessionLocal()
     summary = {
         "users": 0,
@@ -441,9 +444,7 @@ def main() -> None:
     for name, count in summary.items():
         print(f"{name}: {count}")
     print(f"admin login: {ADMIN_LOGIN}")
-    print(f"admin password: {ADMIN_PASSWORD}")
     print(f"manager login: {MANAGER_LOGIN}")
-    print(f"manager password: {MANAGER_PASSWORD}")
 
 
 if __name__ == "__main__":

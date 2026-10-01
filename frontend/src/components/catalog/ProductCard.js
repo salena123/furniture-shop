@@ -1,5 +1,6 @@
 import { query } from '../../services/api';
-import { ImagePlaceholder } from '../common/ImagePlaceholder';
+import { ProductImage } from '../common/ProductImage';
+import { sortedProductImages } from '../../utils/productImages';
 export function ProductCard({ product, from }) {
   return (
     <a
@@ -8,7 +9,7 @@ export function ProductCard({ product, from }) {
         from,
       })}
     >
-      <ImagePlaceholder />
+      <ProductImage image={sortedProductImages(product.images)[0]} alt={product.product_name} />
       <div className="product-description">
         <div className="card-meta">
           {product.is_custom ? 'По вашим размерам' : 'Готовое решение'}

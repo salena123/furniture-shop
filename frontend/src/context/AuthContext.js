@@ -1,31 +1,40 @@
 import { createContext, useState, useCallback, useEffect, useContext } from 'react';
-import { session, api } from '../services/api';
+import { api } from '../services/api';
 export const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(session.get);
   const [user, setUser] = useState(null);
-  const [checking, setChecking] = useState(!!token);
+  const [checking, setChecking] = useState(true);
   const [error, setError] = useState('');
   const [revision, setRevision] = useState(0);
-  const logout = useCallback(() => {
-    session.set(null);
-    setToken(null);
+  const clearSession = useCallback(() => {
     setUser(null);
     setError('');
   }, []);
+  const logout = useCallback(async () => {
+    try {
+      await api('/api/auth/logout', { method: 'POST', auth: true });
+      clearSession();
+      return true;
+    } catch (error) {
+      if (error.status === 401) {
+        clearSession();
+        return true;
+      }
+      setError('Не удалось завершить сессию на сервере. Попробуйте выйти ещё раз.');
+      return false;
+    }
+  }, [clearSession]);
   useEffect(() => {
     const expired = () => {
-      logout();
+      clearSession();
       setError('Сессия завершилась. Войдите снова.');
     };
     window.addEventListener('maestro:session-expired', expired);
     return () => window.removeEventListener('maestro:session-expired', expired);
-  }, [logout]);
+  }, [clearSession]);
   useEffect(() => {
-    if (!token) {
-      setChecking(false);
-      return;
-    }
+    // Remove legacy tokens; authentication now uses HttpOnly cookies.
+    sessionStorage.removeItem('maestro.staff.token');
     const controller = new AbortController();
     setChecking(true);
     setError('');
@@ -37,21 +46,22 @@ export function AuthProvider({ children }) {
         if (!controller.signal.aborted) setUser(data);
       })
       .catch((error) => {
-        if (!controller.signal.aborted) setError(error.message);
+        if (!controller.signal.aborted) {
+          if (error.status === 401) setUser(null);
+          else setError(error.message);
+        }
       })
       .finally(() => {
         if (!controller.signal.aborted) setChecking(false);
       });
     return () => controller.abort();
-  }, [token, revision]);
+  }, [revision]);
   const login = async (credentials) => {
     const data = await api('/api/auth/login', {
       method: 'POST',
       body: credentials,
     });
-    session.set(data.access_token);
     setUser(data.user);
-    setToken(data.access_token);
     setError('');
   };
   return (

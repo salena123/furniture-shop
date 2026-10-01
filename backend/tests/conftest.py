@@ -13,8 +13,11 @@ TEST_DB_PATH = Path(tempfile.gettempdir()) / "furniture_shop_api_tests.sqlite"
 sys.path.insert(0, str(BACKEND_DIR))
 
 os.environ["DATABASE_URL"] = f"sqlite:///{TEST_DB_PATH.as_posix()}"
-os.environ["SECRET_KEY"] = "test-secret-key-change-me-32-bytes-minimum"
+os.environ["SECRET_KEY"] = "test-only-secret-57f298413ab74f3bb3fc9d8e9"
 os.environ["ACCESS_TOKEN_EXPIRE_MINUTES"] = "60"
+os.environ['APP_ENV'] = 'development'
+os.environ['COOKIE_SECURE'] = 'false'
+os.environ['CORS_ORIGINS'] = 'http://localhost:3000,http://127.0.0.1:3000'
 
 from app import models  # noqa: E402,F401
 from app.database import Base, SessionLocal, engine  # noqa: E402

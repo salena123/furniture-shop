@@ -4,6 +4,10 @@ import jwt
 
 from app.models.user import User
 from app.security import JWT_ALGORITHM, TOKEN_SECRET, create_access_token
+from app.security import hash_password
+from app.database import SessionLocal
+from app.schemas.user import UserResponse
+from app.settings import SESSION_COOKIE
 
 
 def _auth_headers(token: str) -> dict[str, str]:
@@ -13,24 +17,18 @@ def _auth_headers(token: str) -> dict[str, str]:
 
 
 def _create_admin(client) -> dict:
-    response = client.post(
-        "/api/users/bootstrap-admin",
-        json={
-            "login": "admin",
-            "name": "Admin",
-            "email": "admin@example.com",
-            "password": "admin12345",
-            "role": "admin",
-        },
-    )
-
-    assert response.status_code == 201
-    return response.json()
+    with SessionLocal() as db:
+        user = User(login='admin', name='Admin', email='admin@example.com', password_hash=hash_password('admin12345'), role='admin')
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return UserResponse.model_validate(user).model_dump()
 
 
 def _login(client, login: str, password: str) -> dict:
     response = client.post(
         "/api/auth/login",
+        headers={'X-CSRF-Protection': '1'},
         json={
             "login": login,
             "password": password,
@@ -38,7 +36,11 @@ def _login(client, login: str, password: str) -> dict:
     )
 
     assert response.status_code == 200
-    return response.json()
+    data = response.json()
+    assert 'access_token' not in data
+    data['access_token'] = client.cookies.get(SESSION_COOKIE)
+    client.cookies.clear()
+    return data
 
 
 def _create_manager(
@@ -181,7 +183,6 @@ def test_login_returns_token_expiration_and_me_uses_bearer(client):
 
     token_response = _login(client, "admin", "admin12345")
 
-    assert token_response["token_type"] == "bearer"
     assert token_response["access_token"]
     assert token_response["access_token"].count(".") == 2
     assert 0 < token_response["expires_in"] <= 3600
@@ -219,6 +220,33 @@ def test_expired_token_is_rejected(client, db_session):
 
     assert response.status_code == 401
     assert response.headers["www-authenticate"] == "Bearer"
+
+
+def test_password_change_revokes_existing_session(client):
+    admin = _create_admin(client)
+    token = _login(client, "admin", "admin12345")["access_token"]
+    response = client.patch(
+        f"/api/users/{admin['id']}",
+        headers=_auth_headers(token),
+        json={"password": "new-admin-password-123"},
+    )
+    assert response.status_code == 200
+    assert client.get("/api/auth/me", headers=_auth_headers(token)).status_code == 401
+    assert _login(client, "admin", "new-admin-password-123")["user"]["id"] == admin["id"]
+
+
+def test_validation_errors_do_not_echo_password(client):
+    response = client.post(
+        "/api/auth/login",
+        json={"login": "admin", "password": "secret-value"},
+    )
+    assert response.status_code == 401
+    response = client.post(
+        "/api/auth/login",
+        json={"login": "admin", "password": "x" * 257},
+    )
+    assert response.status_code == 422
+    assert "x" * 257 not in response.text
 
 
 def test_manager_cannot_create_product(client):

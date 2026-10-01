@@ -1,37 +1,16 @@
 import { useResource } from '../../hooks/useResource';
-import { useState } from 'react';
 import { UnavailablePage } from '../../components/common/UnavailablePage';
 import { catalogReturnLocation, categoryAncestors } from '../../utils/navigation';
 import { Breadcrumbs } from '../../components/common/Breadcrumbs';
 import { LoadState } from '../../components/common/Feedback';
-import { ImagePlaceholder } from '../../components/common/ImagePlaceholder';
+import { ProductGallery } from '../../components/catalog/ProductGallery';
 import { PageHeading } from '../../components/common/PageHeading';
+import { productDetails } from '../../utils/productDetails';
 export function ProductPage({ id, searchParams = '', options, onEnquiry }) {
   const resource = useResource(`/api/products/${id}`);
   const product = resource.data;
   const category = options.data?.categories.find((item) => item.id === product?.category_id);
-  const [photo, setPhoto] = useState(0);
-  const baseDetails = product
-    ? [
-        ['Артикул', product.article],
-        ['Материал', product.material_name || product.material],
-        ['Цвет', product.color],
-        ['Размеры', product.dimensions],
-      ].filter(([, value]) => value)
-    : [];
-  const details = product
-    ? [
-        ...baseDetails,
-        ...product.attributes
-          .filter(
-            (attribute) =>
-              !baseDetails.some(
-                ([name]) => name.toLowerCase() === attribute.attribute_name?.toLowerCase(),
-              ),
-          )
-          .map((attribute) => [attribute.attribute_name, attribute.value]),
-      ]
-    : [];
+  const details = productDetails(product);
   if (resource.status === 404)
     return (
       <UnavailablePage
@@ -68,27 +47,7 @@ export function ProductPage({ id, searchParams = '', options, onEnquiry }) {
       {product && (
         <>
           <div className="product-detail">
-            <div>
-              <ImagePlaceholder
-                className="detail-photo"
-                label={`Фотография проекта ${photo + 1}`}
-              />
-              {product.images.length > 1 && (
-                <div className="photo-thumbnails" aria-label="Фотографии проекта">
-                  {product.images.map((item, index) => (
-                    <button
-                      key={item.id}
-                      className={`thumbnail ${photo === index ? 'selected' : ''}`}
-                      aria-label={`Фотография ${index + 1}`}
-                      aria-pressed={photo === index}
-                      onClick={() => setPhoto(index)}
-                    >
-                      <ImagePlaceholder label={`${index + 1}`} />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            <ProductGallery key={product.id} product={product} />
             <div className="product-summary">
               <PageHeading
                 eyebrow={product.is_custom ? 'Мебель на заказ' : 'Наши работы'}

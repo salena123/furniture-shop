@@ -76,6 +76,7 @@ const response = (data, status = 200) => ({
   json: async () => data,
 });
 let currentUser;
+let loggedIn;
 let savedRequest;
 let handler;
 let liveCategories;
@@ -92,6 +93,7 @@ beforeEach(() => {
   window.history.replaceState(null, '', '/');
   sessionStorage.clear();
   currentUser = manager;
+  loggedIn = false;
   savedRequest = {
     ...request,
   };
@@ -115,12 +117,16 @@ beforeEach(() => {
         ],
         attributes: [],
       });
-    if (path === '/api/auth/me') return response(currentUser);
-    if (path === '/api/auth/login')
-      return response({
-        access_token: 'test-token',
-        user: currentUser,
-      });
+    if (path === '/api/auth/me')
+      return loggedIn ? response(currentUser) : response({ detail: 'Нужна авторизация' }, 401);
+    if (path === '/api/auth/login') {
+      loggedIn = true;
+      return response({ user: currentUser });
+    }
+    if (path === '/api/auth/logout') {
+      loggedIn = false;
+      return response(null, 204);
+    }
     if (path === '/api/dashboard/stats')
       return response({
         new_requests: 1,
@@ -154,7 +160,7 @@ const navigate = (route) =>
   });
 const signIn = (route, user = manager) => {
   currentUser = user;
-  sessionStorage.setItem('maestro.staff.token', 'test-token');
+  loggedIn = true;
   window.history.replaceState(null, '', route);
 };
 test('API categories open inside catalog, expand, and restore focus on Escape', async () => {
@@ -371,6 +377,7 @@ test('product inquiry keeps its product reference', async () => {
 test('login uses API, restores session, and restricts manager navigation', async () => {
   window.history.replaceState(null, '', '#/login');
   render(<App />);
+  await waitFor(() => expect(screen.getByLabelText(/Логин/)).toBeEnabled());
   fireEvent.change(screen.getByLabelText(/Логин/), {
     target: {
       value: 'manager',
@@ -386,7 +393,8 @@ test('login uses API, restores session, and restricts manager navigation', async
       name: 'Войти',
     }),
   );
-  await waitFor(() => expect(sessionStorage.getItem('maestro.staff.token')).toBe('test-token'));
+  await waitFor(() => expect(loggedIn).toBe(true));
+  expect(sessionStorage.getItem('maestro.staff.token')).toBeNull();
   navigate('#/staff');
   expect(
     await screen.findByRole('heading', {

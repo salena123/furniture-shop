@@ -1,24 +1,42 @@
 import { LoadState } from '../common/Feedback';
 import { Field } from '../common/Field';
+import { detailKey, normalizeDetail } from '../../utils/productDetails';
 export function ProductAttributes({ resource, action, mutate, item, options }) {
+  const groups = new Map();
+  resource.data.attributes.forEach((attribute) => {
+    const key = detailKey(attribute.attribute_name);
+    if (!groups.has(key)) groups.set(key, { name: attribute.attribute_name, values: [] });
+    groups.get(key).values.push(attribute);
+  });
   return (
     <>
-      <h3>Характеристики проекта</h3>
+      <h3>Дополнительные характеристики и варианты</h3>
+      <p className="muted">
+        Добавьте стиль, тип изделия или другие варианты материала и цвета. На сайте значения одной
+        характеристики объединяются в одну строку.
+      </p>
       <div className="value-list">
-        {resource.data.attributes.map((attribute) => (
-          <div className="value-row" key={attribute.id}>
-            <span>
-              {attribute.attribute_name}: {attribute.value}
-            </span>
-            <button
-              className="text-button danger-text"
-              disabled={action.busy}
-              onClick={() =>
-                mutate(`/api/products/${item.id}/attributes/${attribute.id}`, 'DELETE')
-              }
-            >
-              Убрать
-            </button>
+        {[...groups].map(([key, group]) => (
+          <div className="product-attribute-group" key={key}>
+            <strong>{group.name}</strong>
+            <div className="product-attribute-values">
+              {group.values.map((attribute) => (
+                <span className="product-attribute-value" key={attribute.id}>
+                  {attribute.value}
+                  <button
+                    type="button"
+                    className="text-button danger-text"
+                    disabled={action.busy}
+                    aria-label={`Убрать ${group.name}: ${attribute.value}`}
+                    onClick={() =>
+                      mutate(`/api/products/${item.id}/attributes/${attribute.id}`, 'DELETE')
+                    }
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
           </div>
         ))}
       </div>
@@ -49,7 +67,22 @@ export function ProductAttributes({ resource, action, mutate, item, options }) {
                 attribute.values
                   .filter(
                     (value) =>
-                      !resource.data.attributes.some((existing) => existing.id === value.id),
+                      !resource.data.attributes.some(
+                        (existing) =>
+                          existing.id === value.id ||
+                          (detailKey(existing.attribute_name) === detailKey(attribute.name) &&
+                            normalizeDetail(existing.value) === normalizeDetail(value.value)),
+                      ) &&
+                      ![
+                        ['Материал', resource.data.material_name || resource.data.material],
+                        ['Цвет', resource.data.color],
+                        ['Размеры', resource.data.dimensions],
+                        ['Артикул', resource.data.article],
+                      ].some(
+                        ([name, current]) =>
+                          detailKey(name) === detailKey(attribute.name) &&
+                          normalizeDetail(current) === normalizeDetail(value.value),
+                      ),
                   )
                   .map((value) => ({
                     value: value.id,

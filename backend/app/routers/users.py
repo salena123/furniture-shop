@@ -6,6 +6,7 @@ from app.models.furniture_comment import FurnitureComment
 from app.models.furniture_request import FurnitureRequest
 from app.models.request_event import RequestEvent
 from app.models.user import User
+from app.models.auth_session import AuthSession
 from app.schemas.user import UserCreate, UserResponse, UserUpdate
 from app.security import hash_password, require_admin, require_manager_or_admin
 
@@ -44,39 +45,6 @@ def _ensure_login_is_free(
             status_code=400,
             detail="Пользователь с таким логином уже существует"
         )
-
-
-@router.post(
-    "/bootstrap-admin",
-    response_model=UserResponse,
-    status_code=status.HTTP_201_CREATED
-)
-def create_first_admin(
-    user_data: UserCreate,
-    db: Session = Depends(get_db)
-):
-    existing_user = db.query(User).first()
-    if existing_user:
-        raise HTTPException(
-            status_code=400,
-            detail="Первый администратор уже создан"
-        )
-
-    _ensure_login_is_free(user_data.login, db)
-
-    user = User(
-        login=user_data.login,
-        name=user_data.name,
-        email=user_data.email,
-        password_hash=hash_password(user_data.password),
-        role="admin"
-    )
-
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-
-    return user
 
 
 @router.post(
@@ -188,6 +156,10 @@ def update_user(
     if "role" in update_data:
         user.role = update_data["role"]
 
+    if update_data.get('password') is not None:
+        user.auth_version = (user.auth_version or 0) + 1
+        db.query(AuthSession).filter(AuthSession.user_id == user.id).delete(synchronize_session=False)
+
     db.commit()
     db.refresh(user)
 
@@ -237,6 +209,7 @@ def delete_user(
         synchronize_session=False
     )
 
+    db.query(AuthSession).filter(AuthSession.user_id == user.id).delete(synchronize_session=False)
     db.delete(user)
     db.commit()
 

@@ -353,3 +353,38 @@ tr:hover td {
   padding: 20px;
   border-radius: 7px;
 }
+.product-editor-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.product-editor-sections button[aria-pressed='true'] {
+  color: white;
+  background: var(--catalog-green);
+  border-color: var(--catalog-green);
+}
+.product-attribute-group {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--menu-border);
+}
+.product-attribute-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.product-attribute-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  background: var(--menu-background);
+  border: 1px solid var(--menu-border);
+}
+.product-attribute-value button {
+  min-width: 28px;
+  min-height: 28px;
+  font-size: 20px;
+}

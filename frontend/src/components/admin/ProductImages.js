@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Field } from '../common/Field';
+import { ProductImage } from '../common/ProductImage';
 export function ProductImages({ resource, mutate, action, item }) {
   const [remove, setRemove] = useState(null);
 
@@ -7,7 +8,7 @@ export function ProductImages({ resource, mutate, action, item }) {
     <>
       <h3 className="section-heading">Фотографии</h3>
       <p className="muted">
-        На витрине пока используются заглушки. Здесь можно подготовить фотографии проекта.
+        Главная фотография отображается в каталоге. Остальные доступны в галерее товара.
       </p>
       <div className="value-list">
         {resource.data.images.map((image) => (
@@ -29,6 +30,11 @@ export function ProductImages({ resource, mutate, action, item }) {
               Фотография №{image.id}{' '}
               {image.is_main && <span className="status-badge">Главная</span>}
             </p>
+            <ProductImage
+              image={image}
+              alt={`${item.product_name}: фотография №${image.id}`}
+              className="admin-photo"
+            />
             <fieldset disabled={action.busy}>
               <div className="form-grid">
                 <Field
