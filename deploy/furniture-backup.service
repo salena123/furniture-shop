@@ -1,0 +1,15 @@
+[Unit]
+Description=Encrypted furniture shop database and photo backup
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+UMask=0077
+EnvironmentFile=/etc/furniture-backup.env
+ExecStart=/usr/bin/python3 /usr/local/lib/furniture-shop/backup.py
+TimeoutStartSec=3h
+TimeoutStopSec=5min
+# SIGTERM reaches Python first, allowing finally to restart the backend.
+KillMode=mixed

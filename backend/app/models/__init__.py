@@ -12,3 +12,5 @@ from app.models.furniture_comment import FurnitureComment
 from app.models.site_contacts import SiteContacts
 from app.models.site_about import SiteAbout
 from app.models.auth_session import AuthSession, AuthRateLimit
+from app.models.public_rate_limit import PublicRequestRateLimit
+from app.models.public_rate_limit import PublicRequestRateLimit

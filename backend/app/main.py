@@ -26,7 +26,7 @@ from app.routers.materials import router as materials_router
 from app.routers.catalog import router as catalog_router
 from app.routers.site_contacts import router as site_contacts_router
 from app.routers.site_about import router as site_about_router
-from app.settings import ALLOWED_ORIGINS, PRODUCTION, SESSION_COOKIE
+from app.settings import ALLOWED_ORIGINS, CSP_HEADER, PRODUCTION, SESSION_COOKIE
 
 app = FastAPI(docs_url=None if PRODUCTION else '/docs', redoc_url=None if PRODUCTION else '/redoc', openapi_url=None if PRODUCTION else '/openapi.json')
 
@@ -101,6 +101,7 @@ async def browser_security(request: Request, call_next):
     response.headers['X-Content-Type-Options'] = 'nosniff'
     response.headers['X-Frame-Options'] = 'DENY'
     response.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    response.headers['Content-Security-Policy'] = CSP_HEADER
     if request.url.path.startswith('/api/'):
         response.headers['Cache-Control'] = 'no-store'
     if PRODUCTION:

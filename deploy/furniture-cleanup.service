@@ -1,0 +1,14 @@
+[Unit]
+Description=Remove expired furniture shop sessions and rate limits
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=furniture
+WorkingDirectory=/var/www/furniture-shop/backend
+ExecStart=/var/www/furniture-shop/backend/venv/bin/python -m app.maintenance --apply
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+TimeoutStartSec=10min

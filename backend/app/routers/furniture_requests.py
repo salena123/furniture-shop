@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from fastapi import Depends, APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import or_
 from sqlalchemy.orm import Session, selectinload
 from sqlalchemy.orm.attributes import set_committed_value
@@ -29,6 +29,7 @@ from app.schemas.catalog import RequestStatusOption
 from app.security import require_admin, require_manager_or_admin
 from app.services.pagination import paginate_query
 from app.services.category_tree import visible_category_ids
+from app.services.public_limits import check_public_request_limit
 from app.services.serializers import (
     serialize_request,
     serialize_request_detail,
@@ -250,8 +251,12 @@ def _assign_request_manager(
 )
 def create_request(
     request: FurnitureRequestCreate,
+    http_request: Request,
     db: Session = Depends(get_db)
 ):
+    if request.website:
+        raise HTTPException(status_code=400, detail='Заявка не прошла проверку')
+    check_public_request_limit(db, http_request.client.host if http_request.client else 'unknown')
     product = None
     if request.product_id is not None:
         product = _get_product_or_404(request.product_id, db)

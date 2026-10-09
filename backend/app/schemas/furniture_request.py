@@ -54,6 +54,7 @@ class FurnitureRequestCreate(BaseModel):
     preferred_contact_time: str | None = None
     personal_data_consent: bool
     comment: str | None = None
+    website: str | None = Field(default=None, max_length=200)
 
     @field_validator("client_name", mode="before")
     @classmethod
@@ -76,6 +77,7 @@ class FurnitureRequestCreate(BaseModel):
         "city",
         "preferred_contact_time",
         "comment",
+        "website",
         mode="before",
     )
     @classmethod

@@ -81,10 +81,17 @@ ACCESS_TOKEN_EXPIRE_MINUTES=120
 CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
 ALLOWED_HOSTS=example.com
 COOKIE_SECURE=false
+CONTENT_SECURITY_POLICY=default-src 'none'; frame-ancestors 'none'; base-uri 'none'
 MAX_IMAGE_SIZE_BYTES=5242880
 ```
 
 `SECRET_KEY` нужен для подписи JWT и должен быть длинным случайным значением. В production задайте `APP_ENV=production`, HTTPS, точные HTTPS-адреса в `CORS_ORIGINS`, домены в `ALLOWED_HOSTS` и `COOKIE_SECURE=true`. Swagger и OpenAPI в production отключаются.
+
+Пример reverse proxy с автоматическим HTTPS находится в [deploy/Caddyfile.example](deploy/Caddyfile.example). Запускайте backend за proxy с поддержкой forwarded-заголовков: `venv\Scripts\uvicorn.exe app.main:app --host 127.0.0.1 --port 8000 --proxy-headers --forwarded-allow-ips=127.0.0.1`. PostgreSQL в production должен подключаться с `sslmode=require` или более строгим режимом.
+
+Для пробной локальной проверки HTTPS используйте [deploy/Caddyfile.local](deploy/Caddyfile.local): запустите frontend на `3000`, backend на `8000`, затем выполните `caddy run --config deploy/Caddyfile.local` и откройте `https://localhost:8443`. Frontend автоматически направит API на HTTPS-адрес страницы. Браузер покажет предупреждение до тех пор, пока локальный корневой сертификат Caddy не будет добавлен в доверенные; после запуска Caddy можно выполнить `caddy trust` от имени администратора.
+
+Публичная форма ограничена десятью заявками с одного IP за 15 минут и содержит honeypot-поле против простых ботов. Для серьёзного рекламного трафика дополнительно подключите CAPTCHA на reverse proxy или в frontend.
 
 После изменений структуры БД запускать миграции:
 
@@ -92,6 +99,13 @@ MAX_IMAGE_SIZE_BYTES=5242880
 cd backend
 venv\Scripts\python.exe -m alembic upgrade head
 ```
+
+## Резервные копии на Ubuntu VPS
+
+Пошаговая настройка копий PostgreSQL, фотографий и конфигурации во внешнее
+зашифрованное S3-хранилище, ежедневной очистки просроченных сессий и ограничения
+журналов описана в [deploy/BACKUPS.md](deploy/BACKUPS.md).
+Шаблоны не активируются автоматически: требуется настроить VPS и реквизиты хранилища.
 
 ## Seed
 

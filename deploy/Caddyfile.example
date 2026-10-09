@@ -1,0 +1,22 @@
+домен.com {
+    encode gzip
+
+    @backend path /api/* /static/*
+    handle @backend {
+        reverse_proxy 127.0.0.1:8000
+    }
+
+    handle {
+        root * /var/www/furniture-shop/frontend/build
+        try_files {path} /index.html
+        file_server
+    }
+
+    header {
+        Content-Security-Policy "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: https:; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; form-action 'self'"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}

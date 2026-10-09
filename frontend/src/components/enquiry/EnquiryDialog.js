@@ -53,6 +53,10 @@ export function EnquiryDialog({ product, onClose, options }) {
               : 'Заполните контакты и коротко опишите задачу.'}
           </p>
           <fieldset disabled={action.busy}>
+            <label className="bot-trap" aria-hidden="true">
+              Не заполняйте это поле
+              <input name="website" tabIndex="-1" autoComplete="off" />
+            </label>
             <div className="form-grid">
               <Field
                 label="Ваше имя"

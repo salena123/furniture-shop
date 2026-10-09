@@ -50,6 +50,18 @@ ALLOWED_IMAGE_TYPES = {
     "image/webp": ".webp",
     "image/gif": ".gif",
 }
+
+
+def _detect_image_extension(file_bytes: bytes) -> str | None:
+    if file_bytes.startswith(b"\xff\xd8\xff"):
+        return ".jpg"
+    if file_bytes.startswith(b"\x89PNG\r\n\x1a\n"):
+        return ".png"
+    if len(file_bytes) >= 12 and file_bytes.startswith(b"RIFF") and file_bytes[8:12] == b"WEBP":
+        return ".webp"
+    if file_bytes.startswith((b"GIF87a", b"GIF89a")):
+        return ".gif"
+    return None
 NON_NULL_PRODUCT_FIELDS = {
     "product_name",
     "slug",
@@ -656,11 +668,18 @@ async def upload_product_image(
             detail=f"Размер файла не должен превышать {max_size_mb} МБ"
         )
 
+    extension = _detect_image_extension(file_bytes)
+    expected_extension = ALLOWED_IMAGE_TYPES[upload.content_type]
+    if extension is None or extension != expected_extension:
+        raise HTTPException(
+            status_code=400,
+            detail="Содержимое файла не соответствует заявленному типу изображения",
+        )
+
     is_main = is_main or not _product_has_images(product.id, db)
     if is_main:
         _unset_main_images(product.id, db)
 
-    extension = ALLOWED_IMAGE_TYPES[upload.content_type]
     file_name = f"{uuid4().hex}{extension}"
     upload_dir = UPLOAD_ROOT / str(product.id)
     upload_dir.mkdir(parents=True, exist_ok=True)

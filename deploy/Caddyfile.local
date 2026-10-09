@@ -1,0 +1,24 @@
+# Локальная проверка HTTPS без домена.
+# Требуется установленный Caddy и запущенные frontend:3000 и backend:8000.
+# Caddy создаст локальный сертификат через собственный CA.
+https://localhost:8443 {
+    tls internal
+    encode gzip
+
+    @backend path /api/* /static/*
+    handle @backend {
+        reverse_proxy 127.0.0.1:8000
+    }
+
+    handle {
+        reverse_proxy 127.0.0.1:3000
+    }
+
+    header {
+        Content-Security-Policy "default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: https:; connect-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; form-action 'self'"
+        Strict-Transport-Security "max-age=300"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+    }
+}
